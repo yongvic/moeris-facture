@@ -46,7 +46,8 @@ export async function createFacture(
     return { error: zodErrorMessage(parsed.error) };
   }
 
-  const facture = await prisma.$transaction(async (tx) => {
+  const facture = await prisma.$transaction(
+    async (tx: import("@prisma/client").Prisma.TransactionClient) => {
     const numero = await generateFactureNumero(tx);
     return tx.facture.create({
       data: {
