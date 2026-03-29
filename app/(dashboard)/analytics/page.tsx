@@ -62,7 +62,7 @@ export default async function AnalyticsPage() {
     select: { id: true, prenom: true, nom: true },
   });
   const clientMap = new Map(
-    clients.map((client) => [
+    clients.map((client: { id: string; prenom: string; nom: string | null }) => [
       client.id,
       `${client.prenom} ${client.nom ?? ""}`.trim(),
     ])
