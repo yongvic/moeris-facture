@@ -61,8 +61,17 @@ export default async function ChambresPage() {
               Aucune chambre enregistrée.
             </div>
           ) : (
-            chambres.map((chambre) => (
-            <div key={chambre.id} className="grid grid-cols-8 gap-2">
+            chambres.map(
+              (chambre: {
+                id: string;
+                numero: string;
+                nom: string | null;
+                type: string;
+                capacite: number;
+                prixNuit: unknown;
+                statut: string;
+              }) => (
+              <div key={chambre.id} className="grid grid-cols-8 gap-2">
               <Link
                 href={`/chambres/${chambre.id}`}
                 className="col-span-2 rounded-xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-3 py-2 text-sm font-semibold text-[color:var(--ink)] hover:border-[color:var(--accent)]"
@@ -77,8 +86,9 @@ export default async function ChambresPage() {
                   }`}
                 />
               ))}
-            </div>
-          ))
+              </div>
+              )
+            )
           )}
         </div>
       </div>
