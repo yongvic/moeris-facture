@@ -1,7 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "./prisma";
 
-type PrismaLike = PrismaClient | Prisma.TransactionClient;
+type PrismaLike = Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">;
 
 export async function generateFactureNumero(client: PrismaLike = prisma) {
   const now = new Date();

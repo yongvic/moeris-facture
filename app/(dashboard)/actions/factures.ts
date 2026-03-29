@@ -47,7 +47,7 @@ export async function createFacture(
   }
 
   const facture = await prisma.$transaction(
-    async (tx: import("@prisma/client").Prisma.TransactionClient) => {
+    async (tx: any) => {
     const numero = await generateFactureNumero(tx);
     return tx.facture.create({
       data: {
