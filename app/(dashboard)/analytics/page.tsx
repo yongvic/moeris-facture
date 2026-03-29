@@ -54,7 +54,9 @@ export default async function AnalyticsPage() {
     monthly[month] += Number(p.montant);
   });
 
-  const topClientIds = topClientsRaw.map((item) => item.clientId);
+  const topClientIds = topClientsRaw.map(
+    (item: { clientId: string }) => item.clientId
+  );
   const clients = await prisma.client.findMany({
     where: { id: { in: topClientIds } },
     select: { id: true, prenom: true, nom: true },
@@ -66,10 +68,12 @@ export default async function AnalyticsPage() {
     ])
   );
 
-  const topClients = topClientsRaw.map((item) => ({
+  const topClients = topClientsRaw.map(
+    (item: { clientId: string; _sum: { montantTotal: unknown | null } }) => ({
     nom: clientMap.get(item.clientId) ?? "Client",
     montant: formatXof(Number(item._sum.montantTotal ?? 0)),
-  }));
+  })
+  );
 
   return (
     <div className="flex flex-col gap-6">
