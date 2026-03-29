@@ -49,7 +49,7 @@ export default async function AnalyticsPage() {
   ];
 
   const monthly = Array.from({ length: 12 }, () => 0);
-  payments.forEach((p) => {
+  payments.forEach((p: { createdAt: Date; montant: unknown }) => {
     const month = p.createdAt.getMonth();
     monthly[month] += Number(p.montant);
   });
