@@ -140,7 +140,7 @@ export default async function AnalyticsPage() {
                 Pas encore de données clients.
               </div>
             ) : (
-              topClients.map((client) => (
+              topClients.map((client: { nom: string; montant: string }) => (
                 <div
                   key={client.nom}
                   className="flex items-center justify-between rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3"
