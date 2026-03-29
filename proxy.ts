@@ -3,17 +3,14 @@ import { withAuth } from "next-auth/middleware";
 export default withAuth({
   callbacks: {
     authorized({ req, token }) {
-      if (req.nextUrl.pathname.startsWith("/dashboard")) {
-        return !!token;
-      }
-      if (req.nextUrl.pathname.startsWith("/api")) {
-        return !!token;
-      }
-      return true;
+      const pathname = req.nextUrl.pathname;
+      if (pathname.startsWith("/api/auth")) return true;
+      if (pathname === "/login") return true;
+      return !!token;
     },
   },
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/api/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
