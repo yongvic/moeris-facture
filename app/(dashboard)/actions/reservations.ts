@@ -78,13 +78,9 @@ export async function createReservation(
   const overlap = await prisma.reservation.findFirst({
     where: {
       chambreId: parsed.data.chambreId,
-      statut: { not: "ANNULEE" },
-      OR: [
-        {
-          dateArrivee: { lte: dateDepart },
-          dateDepart: { gte: dateArrivee },
-        },
-      ],
+      statut: { notIn: ["ANNULEE", "CHECK_OUT_EFFECTUE"] },
+      dateArrivee: { lt: dateDepart },
+      dateDepart: { gt: dateArrivee },
     },
   });
 

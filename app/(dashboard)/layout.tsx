@@ -1,8 +1,13 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import SidebarNav from "../components/SidebarNav";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../lib/auth";
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+export default async function DashboardLayout({ children }: { children: ReactNode }) {
+  const session = await getServerSession(authOptions);
+  const user = session?.user;
+
   return (
     <div className="min-h-screen">
       <div className="flex min-h-screen">
@@ -21,9 +26,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               Session active
             </p>
             <p className="mt-2 font-semibold text-[color:var(--ink)]">
-              Aïcha Diallo
+              {user?.name ?? "Utilisateur"}
             </p>
-            <p className="text-xs text-[color:var(--ink-muted)]">Manager</p>
+            <p className="text-xs text-[color:var(--ink-muted)]">{user?.role ?? "Staff"}</p>
           </div>
         </aside>
 

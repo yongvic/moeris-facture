@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "../../../../lib/prisma";
 import { formatDate, formatXof } from "../../../../lib/format";
@@ -30,17 +31,13 @@ export default async function FactureDetailPage({
     where: { id },
     include: {
       client: true,
-      consommations: { orderBy: { createdAt: "desc" } },
+      consommations: { where: { supprimee: false }, orderBy: { createdAt: "desc" } },
       paiements: { orderBy: { createdAt: "desc" } },
     },
   });
 
   if (!facture) {
-    return (
-      <div className="rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6">
-        Facture introuvable.
-      </div>
-    );
+    notFound();
   }
 
   const total = Number(facture.montantTotal);

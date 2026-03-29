@@ -1,29 +1,57 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "../../../lib/prisma";
 import { requireRole } from "../../../lib/auth-helpers";
 import { generateFactureNumero } from "../../../lib/invoice";
 import { recalcFacture } from "../../../lib/billing";
 
-type PosPayload = {
-  clientId?: string;
-  client?: {
-    prenom: string;
-    telephone?: string;
-  };
-  items: Array<{ id: string; qty: number }>;
-  modePaiement: string;
-  reference?: string;
-};
+// Schéma Zod strict : qty doit être un entier >= 1 pour empêcher
+// toute manipulation de prix via des quantités négatives ou nulles.
+const posSchema = z.object({
+  clientId: z.string().optional(),
+  client: z
+    .object({
+      prenom: z.string().min(1, "Prénom requis"),
+      telephone: z.string().optional(),
+    })
+    .optional(),
+  items: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        qty: z.number().int().min(1, "Quantité minimale : 1"),
+      })
+    )
+    .min(1, "Panier vide."),
+  modePaiement: z.enum([
+    "ESPECES",
+    "VIREMENT",
+    "MOBILE_MONEY",
+    "CARTE_BANCAIRE",
+    "CHEQUE",
+    "AUTRE",
+  ]),
+  reference: z.string().optional(),
+});
 
 export async function POST(request: Request) {
   const gate = await requireRole("STAFF");
   if ("error" in gate) return gate.error;
 
-  const payload = (await request.json()) as PosPayload;
-
-  if (!payload.items || payload.items.length === 0) {
-    return NextResponse.json({ error: "Panier vide." }, { status: 400 });
+  const body = await request.json().catch(() => null);
+  if (!body) {
+    return NextResponse.json({ error: "Corps de requête invalide." }, { status: 400 });
   }
+
+  const parsed = posSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Payload invalide." },
+      { status: 400 }
+    );
+  }
+
+  const payload = parsed.data;
 
   if (
     ["VIREMENT", "MOBILE_MONEY"].includes(payload.modePaiement) &&
@@ -47,9 +75,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const produitMap = new Map(
-    produits.map((produit) => [produit.id, produit])
-  );
+  const produitMap = new Map(produits.map((produit) => [produit.id, produit]));
 
   const facture = await prisma.$transaction(async (tx) => {
     let clientId = payload.clientId;
@@ -78,7 +104,7 @@ export async function POST(request: Request) {
     for (const item of payload.items) {
       const produit = produitMap.get(item.id);
       if (!produit) continue;
-      const quantite = Math.max(1, item.qty);
+      const quantite = item.qty; // déjà validé >= 1 par Zod
       const prixUnitaire = Number(produit.prix);
       const sousTotal = quantite * prixUnitaire;
 
@@ -95,15 +121,17 @@ export async function POST(request: Request) {
       });
     }
 
+    const montantTotal = payload.items.reduce((acc, item) => {
+      const produit = produitMap.get(item.id);
+      if (!produit) return acc;
+      return acc + item.qty * Number(produit.prix);
+    }, 0);
+
     await tx.paiement.create({
       data: {
         factureId: facture.id,
-        montant: payload.items.reduce((acc, item) => {
-          const produit = produitMap.get(item.id);
-          if (!produit) return acc;
-          return acc + Math.max(1, item.qty) * Number(produit.prix);
-        }, 0),
-        modePaiement: payload.modePaiement as any,
+        montant: montantTotal,
+        modePaiement: payload.modePaiement,
         reference: payload.reference ?? null,
       },
     });

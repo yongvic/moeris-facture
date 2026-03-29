@@ -85,9 +85,14 @@ export async function GET(
     return NextResponse.json({ error: "Facture introuvable" }, { status: 404 });
   }
 
-  const logoPath = path.join(process.cwd(), "public", "logo_typo.png");
-  const logoBuffer = await fs.readFile(logoPath);
-  const logoSrc = `data:image/png;base64,${logoBuffer.toString("base64")}`;
+  let logoSrc: string | undefined;
+  try {
+    const logoPath = path.join(process.cwd(), "public", "logo_typo.png");
+    const logoBuffer = await fs.readFile(logoPath);
+    logoSrc = `data:image/png;base64,${logoBuffer.toString("base64")}`;
+  } catch {
+    // Logo optionnel — continuer sans
+  }
 
   const hotelName = process.env.HOTEL_NAME ?? "Residence Moeris";
   const hotelAddress = process.env.HOTEL_ADDRESS ?? "";
@@ -103,7 +108,13 @@ export async function GET(
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Image src={logoSrc} style={styles.logo} />
+            {logoSrc ? (
+              <Image src={logoSrc} style={styles.logo} />
+            ) : (
+              <Text style={{ fontSize: 14, fontWeight: "bold" }}>
+                {hotelName}
+              </Text>
+            )}
           <View>
             <Text style={styles.title}>Facture</Text>
             <Text style={styles.label}>{facture.numero}</Text>
@@ -186,7 +197,7 @@ export async function GET(
   return new NextResponse(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename=${facture.numero}.pdf`,
+      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(facture.numero)}.pdf`,
     },
   });
 }

@@ -169,9 +169,12 @@ export default async function DashboardPage() {
                 Factures en cours
               </h2>
             </div>
-            <button className="rounded-full border border-[color:var(--stroke)] px-3 py-1 text-xs font-semibold text-[color:var(--ink)]">
-              Exporter
-            </button>
+            <a
+              href="/api/exports/factures"
+              className="rounded-full border border-[color:var(--stroke)] px-3 py-1 text-xs font-semibold text-[color:var(--ink)] hover:border-[color:var(--accent)] transition"
+            >
+              Exporter CSV
+            </a>
           </div>
           <div className="mt-6 overflow-hidden rounded-2xl border border-[color:var(--stroke)]">
             <table className="w-full text-left text-sm">
