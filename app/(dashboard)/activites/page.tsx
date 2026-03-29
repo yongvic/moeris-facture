@@ -1,10 +1,9 @@
 import Link from "next/link";
-import type { Activite } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
 import { formatXof } from "../../../lib/format";
 
 export default async function ActivitesPage() {
-  const activites: Activite[] = await prisma.activite.findMany({
+  const activites = await prisma.activite.findMany({
     orderBy: { createdAt: "desc" },
     take: 20,
   });
@@ -37,7 +36,14 @@ export default async function ActivitesPage() {
             Aucune activité configurée.
           </div>
         ) : (
-          activites.map((activite) => (
+          activites.map(
+            (activite: {
+              id: string;
+              nom: string;
+              prix: unknown;
+              prixParUnite?: string | null;
+              capaciteMax?: number | null;
+            }) => (
             <div
               key={activite.id}
               className="rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow)]"
@@ -72,7 +78,8 @@ export default async function ActivitesPage() {
                 Ajouter à une facture
               </button>
             </div>
-          ))
+            )
+          )
         )}
       </div>
     </div>
