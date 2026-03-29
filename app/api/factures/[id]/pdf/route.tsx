@@ -66,13 +66,14 @@ const styles = StyleSheet.create({
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const gate = await requireRole("STAFF");
   if ("error" in gate) return gate.error;
+  const { id } = await params;
 
   const facture = await prisma.facture.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       client: true,
       consommations: { orderBy: { createdAt: "asc" } },
@@ -102,7 +103,7 @@ export async function GET(
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Image src={logoSrc} style={styles.logo} />
+          <Image src={logoSrc} style={styles.logo} alt="Logo Résidence Moeris" />
           <View>
             <Text style={styles.title}>Facture</Text>
             <Text style={styles.label}>{facture.numero}</Text>
@@ -182,7 +183,7 @@ export async function GET(
     </Document>
   );
 
-  return new NextResponse(pdf, {
+  return new NextResponse(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename=${facture.numero}.pdf`,

@@ -14,10 +14,11 @@ const participantSchema = z.object({
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const gate = await requireRole("STAFF");
   if ("error" in gate) return gate.error;
+  const { id } = await params;
 
   const payload = await request.json();
   const parsed = participantSchema.safeParse(payload);
@@ -30,7 +31,7 @@ export async function POST(
 
   const participant = await prisma.participantEvenement.create({
     data: {
-      evenementId: params.id,
+      evenementId: id,
       nom: parsed.data.nom,
       prenom: parsed.data.prenom,
       contact: parsed.data.contact ?? null,

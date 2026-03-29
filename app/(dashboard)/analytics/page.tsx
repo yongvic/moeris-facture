@@ -128,7 +128,7 @@ export default async function AnalyticsPage() {
             Top clients
           </p>
           <h3 className="mt-1 font-display text-xl text-[color:var(--ink)]">
-            Chiffre d'affaires
+            Chiffre d&apos;affaires
           </h3>
           <div className="mt-6 flex flex-col gap-4">
             {topClients.length === 0 ? (

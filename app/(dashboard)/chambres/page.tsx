@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "../../../lib/prisma";
 
 const jours = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -30,12 +31,18 @@ export default async function ChambresPage() {
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <button className="rounded-full border border-[color:var(--stroke)] px-4 py-2 text-sm font-semibold text-[color:var(--ink)]">
+          <Link
+            href="/chambres/nouveau"
+            className="rounded-full border border-[color:var(--stroke)] px-4 py-2 text-sm font-semibold text-[color:var(--ink)] text-center"
+          >
             Ajouter chambre
-          </button>
-          <button className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white">
+          </Link>
+          <Link
+            href="/reservations/nouvelle"
+            className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white text-center"
+          >
             Nouvelle réservation
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -56,9 +63,12 @@ export default async function ChambresPage() {
           ) : (
             chambres.map((chambre) => (
             <div key={chambre.id} className="grid grid-cols-8 gap-2">
-              <div className="col-span-2 rounded-xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-3 py-2 text-sm font-semibold text-[color:var(--ink)]">
+              <Link
+                href={`/chambres/${chambre.id}`}
+                className="col-span-2 rounded-xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-3 py-2 text-sm font-semibold text-[color:var(--ink)] hover:border-[color:var(--accent)]"
+              >
                 {chambre.nom ?? chambre.numero}
-              </div>
+              </Link>
               {jours.map((jour) => (
                 <div
                   key={`${chambre.id}-${jour}`}

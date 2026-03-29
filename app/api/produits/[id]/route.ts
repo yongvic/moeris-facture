@@ -5,13 +5,14 @@ import { produitUpdateSchema } from "../../../../lib/validators/produit";
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const gate = await requireRole("STAFF");
   if ("error" in gate) return gate.error;
+  const { id } = await params;
 
   const produit = await prisma.produit.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
 
   if (!produit) {
@@ -23,10 +24,11 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const gate = await requireRole("MANAGER");
   if ("error" in gate) return gate.error;
+  const { id } = await params;
 
   const payload = await request.json();
   const parsed = produitUpdateSchema.safeParse(payload);
@@ -38,7 +40,7 @@ export async function PATCH(
   }
 
   const produit = await prisma.produit.update({
-    where: { id: params.id },
+    where: { id },
     data: parsed.data,
   });
 
@@ -47,13 +49,14 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const gate = await requireRole("MANAGER");
   if ("error" in gate) return gate.error;
+  const { id } = await params;
 
   const produit = await prisma.produit.update({
-    where: { id: params.id },
+    where: { id },
     data: { archive: true, disponible: false },
   });
 

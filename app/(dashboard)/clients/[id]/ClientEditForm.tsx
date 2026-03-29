@@ -2,6 +2,8 @@
 
 import { useFormState } from "react-dom";
 import { updateClient } from "../../actions/clients";
+import FormError from "../../../components/FormError";
+import SubmitButton from "../../../components/SubmitButton";
 
 const initialState = { error: "" };
 
@@ -32,6 +34,7 @@ export default function ClientEditForm({ client }: { client: ClientData }) {
             name="prenom"
             required
             defaultValue={client.prenom}
+            autoComplete="given-name"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
         </label>
@@ -40,6 +43,7 @@ export default function ClientEditForm({ client }: { client: ClientData }) {
           <input
             name="nom"
             defaultValue={client.nom ?? ""}
+            autoComplete="family-name"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
         </label>
@@ -52,6 +56,7 @@ export default function ClientEditForm({ client }: { client: ClientData }) {
             name="email"
             type="email"
             defaultValue={client.email ?? ""}
+            autoComplete="email"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
         </label>
@@ -60,6 +65,8 @@ export default function ClientEditForm({ client }: { client: ClientData }) {
           <input
             name="telephone"
             defaultValue={client.telephone ?? ""}
+            inputMode="tel"
+            autoComplete="tel"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
         </label>
@@ -84,6 +91,7 @@ export default function ClientEditForm({ client }: { client: ClientData }) {
           <select
             name="segment"
             defaultValue={client.segment ?? "STANDARD"}
+            aria-describedby="segment-help"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           >
             <option value="STANDARD">STANDARD</option>
@@ -91,6 +99,9 @@ export default function ClientEditForm({ client }: { client: ClientData }) {
             <option value="VIP">VIP</option>
             <option value="PREMIUM">PREMIUM</option>
           </select>
+          <span id="segment-help" className="text-xs text-[color:var(--ink-muted)]">
+            Utilisez VIP/PREMIUM pour un suivi renforcé.
+          </span>
         </label>
       </div>
 
@@ -128,19 +139,21 @@ export default function ClientEditForm({ client }: { client: ClientData }) {
           name="notes"
           rows={3}
           defaultValue={client.notes ?? ""}
+          aria-describedby="notes-help"
           className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
         />
+        <span id="notes-help" className="text-xs text-[color:var(--ink-muted)]">
+          Visible uniquement par l&apos;équipe.
+        </span>
       </label>
 
-      {state.error ? (
-        <div className="rounded-2xl border border-[color:var(--danger)]/40 bg-[color:rgba(220,38,38,0.1)] px-4 py-3 text-sm text-[color:var(--danger)]">
-          {state.error}
-        </div>
-      ) : null}
+      <FormError message={state.error} />
 
-      <button className="rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-white">
-        Mettre à jour
-      </button>
+      <SubmitButton
+        label="Mettre à jour"
+        loadingLabel="Mise à jour..."
+        className="rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-white"
+      />
     </form>
   );
 }

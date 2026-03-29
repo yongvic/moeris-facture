@@ -5,13 +5,14 @@ import { clientUpdateSchema } from "../../../../lib/validators/client";
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const gate = await requireRole("STAFF");
   if ("error" in gate) return gate.error;
+  const { id } = await params;
 
   const client = await prisma.client.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       factures: true,
       reservations: true,
@@ -27,10 +28,11 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const gate = await requireRole("STAFF");
   if ("error" in gate) return gate.error;
+  const { id } = await params;
 
   const payload = await request.json();
   const parsed = clientUpdateSchema.safeParse(payload);
@@ -42,7 +44,7 @@ export async function PATCH(
   }
 
   const client = await prisma.client.update({
-    where: { id: params.id },
+    where: { id },
     data: {
       ...parsed.data,
       dateNaissance: parsed.data.dateNaissance
@@ -56,13 +58,14 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const gate = await requireRole("MANAGER");
   if ("error" in gate) return gate.error;
+  const { id } = await params;
 
   const client = await prisma.client.update({
-    where: { id: params.id },
+    where: { id },
     data: { actif: false },
   });
 

@@ -17,6 +17,16 @@ export async function POST(request: Request) {
     );
   }
 
+  if (
+    ["VIREMENT", "MOBILE_MONEY"].includes(parsed.data.modePaiement) &&
+    !parsed.data.reference
+  ) {
+    return NextResponse.json(
+      { error: "Référence obligatoire pour virement ou mobile money." },
+      { status: 400 }
+    );
+  }
+
   const paiement = await prisma.paiement.create({
     data: {
       factureId: parsed.data.factureId,

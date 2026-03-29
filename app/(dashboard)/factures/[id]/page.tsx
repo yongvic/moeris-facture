@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { prisma } from "../../../../lib/prisma";
 import { formatDate, formatXof } from "../../../../lib/format";
-import StatusBadge from "../../components/StatusBadge";
-import { addConsommation, addPaiement, updateFactureStatus } from "../../actions/factures";
+import StatusBadge from "../../../components/StatusBadge";
+import ConsommationForm from "./ConsommationForm";
+import PaiementForm from "./PaiementForm";
+import StatusUpdateForm from "./StatusUpdateForm";
 
 const statusTone: Record<string, "success" | "warning" | "danger" | "neutral"> = {
   OUVERTE: "neutral",
@@ -109,67 +111,7 @@ export default async function FactureDetailPage({
             <h3 className="font-display text-xl text-[color:var(--ink)]">
               Ajouter une consommation
             </h3>
-            <form action={addConsommation} className="mt-4 grid gap-4">
-              <input type="hidden" name="factureId" value={facture.id} />
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
-                  Catégorie
-                  <select
-                    name="categorie"
-                    defaultValue="DIVERS"
-                    className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
-                  >
-                    <option value="CHAMBRE">CHAMBRE</option>
-                    <option value="RESTAURANT">RESTAURANT</option>
-                    <option value="ACTIVITE">ACTIVITE</option>
-                    <option value="EVENEMENT">EVENEMENT</option>
-                    <option value="DIVERS">DIVERS</option>
-                  </select>
-                </label>
-                <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
-                  Description
-                  <input
-                    name="description"
-                    required
-                    className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
-                  />
-                </label>
-              </div>
-              <div className="grid gap-4 md:grid-cols-3">
-                <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
-                  Quantité
-                  <input
-                    name="quantite"
-                    type="number"
-                    step="0.1"
-                    defaultValue={1}
-                    className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
-                  />
-                </label>
-                <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
-                  Prix unitaire
-                  <input
-                    name="prixUnitaire"
-                    type="number"
-                    step="0.01"
-                    required
-                    className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
-                  />
-                </label>
-                <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
-                  Remise
-                  <input
-                    name="remise"
-                    type="number"
-                    step="0.01"
-                    className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
-                  />
-                </label>
-              </div>
-              <button className="rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-white">
-                Ajouter la consommation
-              </button>
-            </form>
+            <ConsommationForm factureId={facture.id} />
           </div>
         </div>
 
@@ -210,44 +152,7 @@ export default async function FactureDetailPage({
             <h3 className="font-display text-xl text-[color:var(--ink)]">
               Ajouter un paiement
             </h3>
-            <form action={addPaiement} className="mt-4 grid gap-4">
-              <input type="hidden" name="factureId" value={facture.id} />
-              <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
-                Montant
-                <input
-                  name="montant"
-                  type="number"
-                  step="0.01"
-                  required
-                  className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
-                />
-              </label>
-              <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
-                Mode de paiement
-                <select
-                  name="modePaiement"
-                  defaultValue="ESPECES"
-                  className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
-                >
-                  <option value="ESPECES">ESPECES</option>
-                  <option value="VIREMENT">VIREMENT</option>
-                  <option value="MOBILE_MONEY">MOBILE_MONEY</option>
-                  <option value="CARTE_BANCAIRE">CARTE_BANCAIRE</option>
-                  <option value="CHEQUE">CHEQUE</option>
-                  <option value="AUTRE">AUTRE</option>
-                </select>
-              </label>
-              <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
-                Référence
-                <input
-                  name="reference"
-                  className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
-                />
-              </label>
-              <button className="rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-white">
-                Enregistrer le paiement
-              </button>
-            </form>
+            <PaiementForm factureId={facture.id} />
           </div>
 
           <div className="rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow)]">
@@ -275,23 +180,7 @@ export default async function FactureDetailPage({
               </div>
             </div>
 
-            <form action={updateFactureStatus} className="mt-6 grid gap-3">
-              <input type="hidden" name="id" value={facture.id} />
-              <button
-                name="statut"
-                value="PAYEE"
-                className="rounded-full border border-[color:var(--stroke)] px-4 py-2 text-sm font-semibold text-[color:var(--ink)]"
-              >
-                Marquer comme payée
-              </button>
-              <button
-                name="statut"
-                value="ANNULEE"
-                className="rounded-full border border-[color:var(--danger)]/40 px-4 py-2 text-sm font-semibold text-[color:var(--danger)]"
-              >
-                Annuler la facture
-              </button>
-            </form>
+            <StatusUpdateForm factureId={facture.id} />
           </div>
         </div>
       </div>

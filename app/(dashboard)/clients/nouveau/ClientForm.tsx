@@ -2,6 +2,8 @@
 
 import { useFormState } from "react-dom";
 import { createClient } from "../../actions/clients";
+import FormError from "../../../components/FormError";
+import SubmitButton from "../../../components/SubmitButton";
 
 const initialState = { error: "" };
 
@@ -16,6 +18,7 @@ export default function ClientForm() {
           <input
             name="prenom"
             required
+            autoComplete="given-name"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             placeholder="Aïcha"
           />
@@ -24,6 +27,7 @@ export default function ClientForm() {
           Nom
           <input
             name="nom"
+            autoComplete="family-name"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             placeholder="Diallo"
           />
@@ -36,6 +40,7 @@ export default function ClientForm() {
           <input
             name="email"
             type="email"
+            autoComplete="email"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             placeholder="aicha@email.com"
           />
@@ -44,6 +49,8 @@ export default function ClientForm() {
           Téléphone
           <input
             name="telephone"
+            inputMode="tel"
+            autoComplete="tel"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             placeholder="+228 90 00 00 00"
           />
@@ -63,6 +70,7 @@ export default function ClientForm() {
           Segment
           <select
             name="segment"
+            aria-describedby="segment-help"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             defaultValue="STANDARD"
           >
@@ -71,6 +79,9 @@ export default function ClientForm() {
             <option value="VIP">VIP</option>
             <option value="PREMIUM">PREMIUM</option>
           </select>
+          <span id="segment-help" className="text-xs text-[color:var(--ink-muted)]">
+            Utilisez VIP/PREMIUM pour un suivi renforcé.
+          </span>
         </label>
       </div>
 
@@ -104,19 +115,21 @@ export default function ClientForm() {
         <textarea
           name="notes"
           rows={3}
+          aria-describedby="notes-help"
           className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
         />
+        <span id="notes-help" className="text-xs text-[color:var(--ink-muted)]">
+          Visible uniquement par l&apos;équipe.
+        </span>
       </label>
 
-      {state.error ? (
-        <div className="rounded-2xl border border-[color:var(--danger)]/40 bg-[color:rgba(220,38,38,0.1)] px-4 py-3 text-sm text-[color:var(--danger)]">
-          {state.error}
-        </div>
-      ) : null}
+      <FormError message={state.error} />
 
-      <button className="rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-white">
-        Enregistrer le client
-      </button>
+      <SubmitButton
+        label="Enregistrer le client"
+        loadingLabel="Enregistrement..."
+        className="rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-white"
+      />
     </form>
   );
 }

@@ -46,6 +46,7 @@ export default function LoginPage() {
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             placeholder="admin@moeris.com"
           />
@@ -57,18 +58,24 @@ export default function LoginPage() {
             required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            autoComplete="current-password"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             placeholder="••••••••"
           />
         </label>
         {error ? (
-          <p className="rounded-2xl border border-[color:var(--danger)]/40 bg-[color:rgba(220,38,38,0.1)] px-4 py-3 text-sm text-[color:var(--danger)]">
+          <p
+            role="alert"
+            aria-live="polite"
+            className="rounded-2xl border border-[color:var(--danger)]/40 bg-[color:rgba(220,38,38,0.1)] px-4 py-3 text-sm text-[color:var(--danger)]"
+          >
             {error}
           </p>
         ) : null}
         <button
           type="submit"
           disabled={loading}
+          aria-busy={loading}
           className="rounded-full bg-[color:var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-70"
         >
           {loading ? "Connexion..." : "Se connecter"}

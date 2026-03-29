@@ -1,3 +1,4 @@
+import Link from "next/link";
 import StatusBadge from "../../components/StatusBadge";
 import { prisma } from "../../../lib/prisma";
 import { formatDate } from "../../../lib/format";
@@ -36,9 +37,12 @@ export default async function EvenementsPage() {
             Suivi des acomptes et des participants.
           </p>
         </div>
-        <button className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white">
+        <Link
+          href="/evenements/nouveau"
+          className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white text-center"
+        >
           Nouvel événement
-        </button>
+        </Link>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -56,7 +60,9 @@ export default async function EvenementsPage() {
                 {formatDate(event.dateDebut)}
               </p>
               <h3 className="mt-1 font-display text-xl text-[color:var(--ink)]">
-                {event.titre}
+                <Link href={`/evenements/${event.id}`} className="hover:underline">
+                  {event.titre}
+                </Link>
               </h3>
               <p className="mt-3 text-sm text-[color:var(--ink-muted)]">
                 Capacité: {event.capaciteMax ?? "—"} pers.

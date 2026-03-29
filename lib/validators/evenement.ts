@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const evenementCreateSchema = z.object({
-  titre: z.string().min(1),
+  titre: z.string().min(1, "Titre requis"),
   type: z.enum([
     "SOIREE",
     "SEMINAIRE",
@@ -11,12 +11,12 @@ export const evenementCreateSchema = z.object({
     "AUTRE",
   ]),
   description: z.string().optional().nullable(),
-  dateDebut: z.string().min(1),
-  dateFin: z.string().min(1),
-  capaciteMax: z.number().optional().nullable(),
-  prixParParticipant: z.number().optional().nullable(),
-  prixForfait: z.number().optional().nullable(),
-  acompteRequis: z.number().optional().nullable(),
+  dateDebut: z.string().min(1, "Date de début requise"),
+  dateFin: z.string().min(1, "Date de fin requise"),
+  capaciteMax: z.number().min(1, "Capacité invalide").optional().nullable(),
+  prixParParticipant: z.number().min(0, "Prix invalide").optional().nullable(),
+  prixForfait: z.number().min(0, "Prix invalide").optional().nullable(),
+  acompteRequis: z.number().min(0, "Acompte invalide").optional().nullable(),
   statut: z.enum(["A_VENIR", "EN_COURS", "TERMINE", "ANNULE"]).optional(),
 });
 

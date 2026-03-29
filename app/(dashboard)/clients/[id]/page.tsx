@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "../../../../lib/prisma";
 import { formatDate, formatXof } from "../../../../lib/format";
 import ClientEditForm from "./ClientEditForm";
-import StatusBadge from "../../components/StatusBadge";
+import StatusBadge from "../../../components/StatusBadge";
 
 export default async function ClientDetailPage({
   params,

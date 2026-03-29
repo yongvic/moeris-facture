@@ -5,13 +5,14 @@ import { evenementUpdateSchema } from "../../../../lib/validators/evenement";
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const gate = await requireRole("STAFF");
   if ("error" in gate) return gate.error;
+  const { id } = await params;
 
   const evenement = await prisma.evenement.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { participants: true, factures: true },
   });
 
@@ -24,10 +25,11 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const gate = await requireRole("MANAGER");
   if ("error" in gate) return gate.error;
+  const { id } = await params;
 
   const payload = await request.json();
   const parsed = evenementUpdateSchema.safeParse(payload);
@@ -39,7 +41,7 @@ export async function PATCH(
   }
 
   const evenement = await prisma.evenement.update({
-    where: { id: params.id },
+    where: { id },
     data: {
       ...parsed.data,
       dateDebut: parsed.data.dateDebut
@@ -54,13 +56,14 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const gate = await requireRole("ADMIN");
   if ("error" in gate) return gate.error;
+  const { id } = await params;
 
   const evenement = await prisma.evenement.update({
-    where: { id: params.id },
+    where: { id },
     data: { statut: "ANNULE" },
   });
 

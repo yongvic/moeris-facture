@@ -8,7 +8,7 @@ export const clientQuickSchema = z.object({
 export const clientFullSchema = z.object({
   prenom: z.string().min(1, "Prénom requis"),
   nom: z.string().optional().nullable(),
-  email: z.string().email().optional().nullable(),
+  email: z.string().email("Email invalide").optional().nullable(),
   telephone: z.string().optional().nullable(),
   dateNaissance: z.string().optional().nullable(),
   nationalite: z.string().optional().nullable(),

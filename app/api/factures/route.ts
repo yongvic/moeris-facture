@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { StatutFacture } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
 import { requireRole } from "../../../lib/auth-helpers";
 import { factureCreateSchema } from "../../../lib/validators/facture";
@@ -9,14 +10,18 @@ export async function GET(request: Request) {
   if ("error" in gate) return gate.error;
 
   const { searchParams } = new URL(request.url);
-  const statut = searchParams.get("statut") ?? undefined;
+  const statutParam = searchParams.get("statut") ?? undefined;
+  const statut =
+    statutParam && (Object.values(StatutFacture) as string[]).includes(statutParam)
+      ? (statutParam as StatutFacture)
+      : undefined;
   const clientId = searchParams.get("clientId") ?? undefined;
   const take = Number(searchParams.get("take") ?? 50);
   const skip = Number(searchParams.get("skip") ?? 0);
 
   const factures = await prisma.facture.findMany({
     where: {
-      statut: statut as any,
+      statut,
       clientId: clientId ?? undefined,
     },
     orderBy: { createdAt: "desc" },

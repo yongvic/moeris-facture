@@ -30,6 +30,13 @@ export async function POST(request: Request) {
 
   const dateArrivee = new Date(parsed.data.dateArrivee);
   const dateDepart = new Date(parsed.data.dateDepart);
+
+  if (dateDepart <= dateArrivee) {
+    return NextResponse.json(
+      { error: "La date de départ doit être après la date d'arrivée." },
+      { status: 400 }
+    );
+  }
   const nombreNuits =
     parsed.data.nombreNuits ??
     Math.max(1, Math.ceil((dateDepart.getTime() - dateArrivee.getTime()) / 86400000));

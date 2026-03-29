@@ -16,5 +16,10 @@ export default async function PosPage() {
     }),
   ]);
 
-  return <PosClient produits={produits} clients={clients} />;
+  const produitsData = produits.map((produit) => ({
+    ...produit,
+    prix: Number(produit.prix),
+  }));
+
+  return <PosClient produits={produitsData} clients={clients} />;
 }

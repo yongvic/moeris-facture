@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 type Produit = {
@@ -33,6 +34,7 @@ export default function PosClient({
   const [quickName, setQuickName] = useState("");
   const [quickPhone, setQuickPhone] = useState("");
   const [modePaiement, setModePaiement] = useState("ESPECES");
+  const [reference, setReference] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -74,11 +76,19 @@ export default function PosClient({
     setQuickName("");
     setQuickPhone("");
     setModePaiement("ESPECES");
+    setReference("");
   };
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
       setError("Ajoute au moins un produit.");
+      return;
+    }
+    if (
+      ["VIREMENT", "MOBILE_MONEY"].includes(modePaiement) &&
+      !reference.trim()
+    ) {
+      setError("Référence obligatoire pour virement ou mobile money.");
       return;
     }
     setError("");
@@ -133,6 +143,7 @@ export default function PosClient({
           factureId,
           montant: total,
           modePaiement,
+          reference: reference || undefined,
         }),
       });
 
@@ -157,6 +168,12 @@ export default function PosClient({
               POS rapide
             </h2>
           </div>
+          <Link
+            href="/restaurant/menu"
+            className="rounded-full border border-[color:var(--stroke)] px-4 py-2 text-xs font-semibold text-[color:var(--ink)]"
+          >
+            Gérer le menu
+          </Link>
         </div>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {produits.length === 0 ? (
@@ -211,6 +228,7 @@ export default function PosClient({
                     <button
                       type="button"
                       onClick={() => updateQty(item.id, -1)}
+                      aria-label={`Retirer un ${item.nom}`}
                       className="rounded-full border border-[color:var(--stroke)] px-2"
                     >
                       -
@@ -219,6 +237,7 @@ export default function PosClient({
                     <button
                       type="button"
                       onClick={() => updateQty(item.id, 1)}
+                      aria-label={`Ajouter un ${item.nom}`}
                       className="rounded-full border border-[color:var(--stroke)] px-2"
                     >
                       +
@@ -256,12 +275,15 @@ export default function PosClient({
                 placeholder="Prénom"
                 value={quickName}
                 onChange={(event) => setQuickName(event.target.value)}
+                aria-label="Prénom"
                 className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-sm text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
               />
               <input
                 placeholder="Téléphone"
                 value={quickPhone}
                 onChange={(event) => setQuickPhone(event.target.value)}
+                aria-label="Téléphone"
+                inputMode="tel"
                 className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-sm text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
               />
             </div>
@@ -282,10 +304,27 @@ export default function PosClient({
             <option value="CHEQUE">CHEQUE</option>
             <option value="AUTRE">AUTRE</option>
           </select>
+          <span className="text-xs text-[color:var(--ink-muted)]">
+            Référence obligatoire pour virement ou mobile money.
+          </span>
+        </label>
+
+        <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
+          Référence (optionnel)
+          <input
+            value={reference}
+            onChange={(event) => setReference(event.target.value)}
+            aria-label="Référence"
+            className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-sm text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
+          />
         </label>
 
         {error ? (
-          <div className="rounded-2xl border border-[color:var(--danger)]/40 bg-[color:rgba(220,38,38,0.1)] px-4 py-3 text-sm text-[color:var(--danger)]">
+          <div
+            role="alert"
+            aria-live="polite"
+            className="rounded-2xl border border-[color:var(--danger)]/40 bg-[color:rgba(220,38,38,0.1)] px-4 py-3 text-sm text-[color:var(--danger)]"
+          >
             {error}
           </div>
         ) : null}
@@ -298,7 +337,8 @@ export default function PosClient({
           <button
             type="button"
             onClick={handleCheckout}
-            disabled={loading}
+            disabled={loading || cart.length === 0}
+            aria-busy={loading}
             className="mt-4 w-full rounded-full bg-[color:var(--accent)] px-4 py-3 text-sm font-semibold text-white disabled:opacity-70"
           >
             {loading ? "Encaissement..." : "Encaisser"}

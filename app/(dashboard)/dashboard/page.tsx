@@ -277,7 +277,7 @@ export default async function DashboardPage() {
 
         <div className="rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow)]">
           <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--ink-muted)]">
-            Aujourd'hui
+            Aujourd&apos;hui
           </p>
           <h2 className="mt-1 font-display text-xl text-[color:var(--ink)]">
             Activités & événements

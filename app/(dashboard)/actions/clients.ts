@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "../../../lib/prisma";
 import { requireRole } from "../../../lib/auth-helpers";
 import { clientCreateSchema, clientUpdateSchema } from "../../../lib/validators/client";
+import { zodErrorMessage } from "../../../lib/validation";
 
 type FormState = {
   error?: string;
@@ -40,15 +41,16 @@ export async function createClient(
 
   const parsed = clientCreateSchema.safeParse(payload);
   if (!parsed.success) {
-    return { error: "Veuillez vérifier les champs requis." };
+    return { error: zodErrorMessage(parsed.error) };
   }
 
   const client = await prisma.client.create({
     data: {
       ...parsed.data,
-      dateNaissance: parsed.data.dateNaissance
-        ? new Date(parsed.data.dateNaissance)
-        : null,
+      dateNaissance:
+        "dateNaissance" in parsed.data && parsed.data.dateNaissance
+          ? new Date(parsed.data.dateNaissance)
+          : null,
     },
   });
 
@@ -85,7 +87,7 @@ export async function updateClient(
 
   const parsed = clientUpdateSchema.safeParse(payload);
   if (!parsed.success) {
-    return { error: "Veuillez vérifier les champs requis." };
+    return { error: zodErrorMessage(parsed.error) };
   }
 
   await prisma.client.update({

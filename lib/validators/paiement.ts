@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const paiementCreateSchema = z.object({
-  factureId: z.string().min(1),
-  montant: z.number().min(0.01),
+  factureId: z.string().min(1, "Facture requise"),
+  montant: z.number().min(0.01, "Montant invalide"),
   modePaiement: z.enum([
     "ESPECES",
     "VIREMENT",

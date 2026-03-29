@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { prisma } from "../../../../lib/prisma";
-import { createFacture } from "../../actions/factures";
+import FactureForm from "./FactureForm";
 
 export default async function NouvelleFacturePage() {
   const clients = await prisma.client.findMany({
@@ -7,6 +8,11 @@ export default async function NouvelleFacturePage() {
     orderBy: { createdAt: "desc" },
     take: 50,
   });
+
+  const clientOptions = clients.map((client) => ({
+    id: client.id,
+    label: `${client.prenom} ${client.nom ?? ""}`.trim(),
+  }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -22,51 +28,17 @@ export default async function NouvelleFacturePage() {
         </p>
       </div>
 
-      <form
-        action={createFacture}
-        className="rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow)]"
-      >
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
-            Client *
-            <select
-              name="clientId"
-              required
-              className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
-            >
-              <option value="">Sélectionner</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.prenom} {client.nom ?? ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
-            Notes internes
-            <input
-              name="notes"
-              className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
-            />
-          </label>
+      <FactureForm clients={clientOptions} />
+      {clients.length === 0 ? (
+        <div className="mt-4">
+          <Link
+            href="/clients/nouveau"
+            className="text-sm font-semibold text-[color:var(--accent)]"
+          >
+            Créer un client
+          </Link>
         </div>
-
-        <div className="mt-6 flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
-          {clients.length === 0 ? (
-            <p>
-              Aucun client disponible. Crée d&apos;abord un client dans le CRM.
-            </p>
-          ) : (
-            <p>
-              Vous pourrez ajouter des consommations et paiements après création.
-            </p>
-          )}
-        </div>
-
-        <button className="mt-6 rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-white">
-          Créer la facture
-        </button>
-      </form>
+      ) : null}
     </div>
   );
 }

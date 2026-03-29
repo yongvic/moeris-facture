@@ -8,7 +8,9 @@ const navItems = [
   { label: "Clients", href: "/clients" },
   { label: "Factures", href: "/factures" },
   { label: "Chambres", href: "/chambres" },
+  { label: "Réservations", href: "/reservations" },
   { label: "Restaurant", href: "/restaurant/pos" },
+  { label: "Menu", href: "/restaurant/menu" },
   { label: "Activités", href: "/activites" },
   { label: "Événements", href: "/evenements" },
   { label: "Analytics", href: "/analytics" },
@@ -33,6 +35,7 @@ export default function SidebarNav() {
           <Link
             key={item.href}
             href={item.href}
+            aria-current={active ? "page" : undefined}
             className={`rounded-xl px-3 py-2 transition-colors ${
               active
                 ? "bg-[color:var(--surface-2)] text-[color:var(--ink)] shadow-sm"

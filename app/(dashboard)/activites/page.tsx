@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "../../../lib/prisma";
 import { formatXof } from "../../../lib/format";
 
@@ -21,9 +22,12 @@ export default async function ActivitesPage() {
             Tarifs par unité, capacité et gratuités configurables.
           </p>
         </div>
-        <button className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white">
+        <Link
+          href="/activites/nouvelle"
+          className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white text-center"
+        >
           Nouvelle activité
-        </button>
+        </Link>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -41,7 +45,9 @@ export default async function ActivitesPage() {
                 Activité
               </p>
               <h3 className="mt-1 font-display text-xl text-[color:var(--ink)]">
-                {activite.nom}
+                <Link href={`/activites/${activite.id}`} className="hover:underline">
+                  {activite.nom}
+                </Link>
               </h3>
               <div className="mt-4 flex items-center justify-between text-sm text-[color:var(--ink-muted)]">
                 <span>Tarif</span>

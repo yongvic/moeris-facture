@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { SegmentClient } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
 import { requireRole } from "../../../lib/auth-helpers";
 import { clientCreateSchema } from "../../../lib/validators/client";
@@ -9,14 +10,17 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q")?.trim();
-  const segment = searchParams.get("segment")?.trim() ?? undefined;
+  const segmentParam = searchParams.get("segment")?.trim();
+  const segment = segmentParam && (Object.values(SegmentClient) as string[]).includes(segmentParam)
+    ? (segmentParam as SegmentClient)
+    : undefined;
   const take = Number(searchParams.get("take") ?? 50);
   const skip = Number(searchParams.get("skip") ?? 0);
 
   const clients = await prisma.client.findMany({
     where: {
       actif: true,
-      segment: segment as any,
+      segment,
       OR: q
         ? [
             { prenom: { contains: q, mode: "insensitive" } },
@@ -50,9 +54,10 @@ export async function POST(request: Request) {
   const client = await prisma.client.create({
     data: {
       ...parsed.data,
-      dateNaissance: parsed.data.dateNaissance
-        ? new Date(parsed.data.dateNaissance)
-        : null,
+      dateNaissance:
+        "dateNaissance" in parsed.data && parsed.data.dateNaissance
+          ? new Date(parsed.data.dateNaissance)
+          : null,
     },
   });
 
