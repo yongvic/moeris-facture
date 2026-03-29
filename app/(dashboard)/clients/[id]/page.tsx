@@ -28,7 +28,8 @@ export default async function ClientDetailPage({
   }
 
   const total = client.factures.reduce(
-    (acc: number, facture) => acc + Number(facture.montantTotal),
+    (acc: number, facture: { montantTotal: unknown }) =>
+      acc + Number(facture.montantTotal),
     0
   );
 
@@ -74,7 +75,13 @@ export default async function ClientDetailPage({
                 Aucune facture pour ce client.
               </div>
             ) : (
-              client.factures.map((facture) => (
+              client.factures.map(
+                (facture: {
+                  id: string;
+                  numero: string;
+                  createdAt: Date;
+                  statut: string;
+                }) => (
                 <Link
                   key={facture.id}
                   href={`/factures/${facture.id}`}
@@ -92,7 +99,8 @@ export default async function ClientDetailPage({
                     {facture.statut}
                   </StatusBadge>
                 </Link>
-              ))
+                )
+              )
             )}
           </div>
         </div>
