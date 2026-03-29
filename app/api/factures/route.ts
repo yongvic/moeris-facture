@@ -49,18 +49,19 @@ export async function POST(request: Request) {
     );
   }
 
-  const numero = await generateFactureNumero();
-
-  const facture = await prisma.facture.create({
-    data: {
-      numero,
-      clientId: parsed.data.clientId,
-      reservationId: parsed.data.reservationId ?? null,
-      evenementId: parsed.data.evenementId ?? null,
-      notes: parsed.data.notes ?? null,
-      remiseGlobale: parsed.data.remiseGlobale ?? null,
-      remisePourcent: parsed.data.remisePourcent ?? null,
-    },
+  const facture = await prisma.$transaction(async (tx) => {
+    const numero = await generateFactureNumero(tx);
+    return tx.facture.create({
+      data: {
+        numero,
+        clientId: parsed.data.clientId,
+        reservationId: parsed.data.reservationId ?? null,
+        evenementId: parsed.data.evenementId ?? null,
+        notes: parsed.data.notes ?? null,
+        remiseGlobale: parsed.data.remiseGlobale ?? null,
+        remisePourcent: parsed.data.remisePourcent ?? null,
+      },
+    });
   });
 
   return NextResponse.json({ data: facture }, { status: 201 });

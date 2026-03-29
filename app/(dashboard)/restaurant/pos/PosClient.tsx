@@ -95,57 +95,27 @@ export default function PosClient({
     setLoading(true);
 
     try {
-      let finalClientId = clientId;
-      if (!finalClientId) {
-        if (!quickName) {
-          throw new Error("Choisis un client ou crée un client rapide.");
-        }
-        const resClient = await fetch("/api/clients", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prenom: quickName,
-            telephone: quickPhone || undefined,
-          }),
-        });
-        if (!resClient.ok) throw new Error("Erreur création client.");
-        const clientData = await resClient.json();
-        finalClientId = clientData.data.id;
-      }
-
-      const resFacture = await fetch("/api/factures", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId: finalClientId }),
-      });
-      if (!resFacture.ok) throw new Error("Erreur création facture.");
-      const factureData = await resFacture.json();
-      const factureId = factureData.data.id;
-
-      for (const item of cart) {
-        await fetch("/api/consommations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            factureId,
-            categorie: "RESTAURANT",
-            description: item.nom,
-            quantite: item.qty,
-            prixUnitaire: item.prix,
-          }),
-        });
-      }
-
-      await fetch("/api/paiements", {
+      const res = await fetch("/api/pos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          factureId,
-          montant: total,
+          clientId: clientId || undefined,
+          client: clientId
+            ? undefined
+            : { prenom: quickName, telephone: quickPhone || undefined },
+          items: cart.map((item) => ({ id: item.id, qty: item.qty })),
           modePaiement,
           reference: reference || undefined,
         }),
       });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error ?? "Erreur encaissement.");
+      }
+
+      const data = await res.json();
+      const factureId = data.data.id;
 
       reset();
       window.location.href = `/factures/${factureId}`;

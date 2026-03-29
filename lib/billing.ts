@@ -1,12 +1,18 @@
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "./prisma";
 
-export async function recalcFacture(factureId: string) {
-  const total = await prisma.consommation.aggregate({
+type PrismaLike = PrismaClient | Prisma.TransactionClient;
+
+export async function recalcFacture(
+  factureId: string,
+  client: PrismaLike = prisma
+) {
+  const total = await client.consommation.aggregate({
     where: { factureId, supprimee: false },
     _sum: { sousTotal: true },
   });
 
-  const paid = await prisma.paiement.aggregate({
+  const paid = await client.paiement.aggregate({
     where: { factureId },
     _sum: { montant: true },
   });
@@ -22,7 +28,7 @@ export async function recalcFacture(factureId: string) {
     statut = "PAYEE";
   }
 
-  await prisma.facture.update({
+  await client.facture.update({
     where: { id: factureId },
     data: {
       montantTotal: totalValue,

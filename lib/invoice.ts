@@ -1,12 +1,18 @@
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "./prisma";
 
-export async function generateFactureNumero() {
+type PrismaLike = PrismaClient | Prisma.TransactionClient;
+
+export async function generateFactureNumero(client: PrismaLike = prisma) {
   const now = new Date();
   const year = now.getFullYear();
   const start = new Date(year, 0, 1);
   const end = new Date(year + 1, 0, 1);
 
-  const count = await prisma.facture.count({
+  const lockKey = 910000 + year;
+  await client.$executeRaw`SELECT pg_advisory_xact_lock(${lockKey})`;
+
+  const count = await client.facture.count({
     where: { createdAt: { gte: start, lt: end } },
   });
 
