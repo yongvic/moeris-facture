@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormStatus } from "react";
+import { useFormStatus } from "react-dom";
 
 export default function SubmitButton({
   label,
