@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { addConsommation } from "../../actions/factures";
 import FormError from "../../../components/FormError";
 import SubmitButton from "../../../components/SubmitButton";
@@ -8,7 +8,7 @@ import SubmitButton from "../../../components/SubmitButton";
 const initialState = { error: "" };
 
 export default function ConsommationForm({ factureId }: { factureId: string }) {
-  const [state, formAction] = useFormState(addConsommation, initialState);
+  const [state, formAction] = useActionState(addConsommation, initialState);
 
   return (
     <form action={formAction} className="mt-4 grid gap-4">
@@ -90,3 +90,4 @@ export default function ConsommationForm({ factureId }: { factureId: string }) {
     </form>
   );
 }
+

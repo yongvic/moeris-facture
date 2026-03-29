@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import FormError from "../../../components/FormError";
 import SubmitButton from "../../../components/SubmitButton";
 import { createFacture } from "../../actions/factures";
@@ -10,7 +10,7 @@ type ClientOption = { id: string; label: string };
 const initialState = { error: "" };
 
 export default function FactureForm({ clients }: { clients: ClientOption[] }) {
-  const [state, formAction] = useFormState(createFacture, initialState);
+  const [state, formAction] = useActionState(createFacture, initialState);
   const disabled = clients.length === 0;
 
   return (
@@ -72,3 +72,4 @@ export default function FactureForm({ clients }: { clients: ClientOption[] }) {
     </form>
   );
 }
+

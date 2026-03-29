@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { addPaiement } from "../../actions/factures";
 import FormError from "../../../components/FormError";
 import SubmitButton from "../../../components/SubmitButton";
@@ -8,7 +8,7 @@ import SubmitButton from "../../../components/SubmitButton";
 const initialState = { error: "" };
 
 export default function PaiementForm({ factureId }: { factureId: string }) {
-  const [state, formAction] = useFormState(addPaiement, initialState);
+  const [state, formAction] = useActionState(addPaiement, initialState);
 
   return (
     <form action={formAction} className="mt-4 grid gap-4">
@@ -63,3 +63,4 @@ export default function PaiementForm({ factureId }: { factureId: string }) {
     </form>
   );
 }
+

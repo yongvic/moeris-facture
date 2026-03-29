@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { createReservation } from "../../actions/reservations";
 import FormError from "../../../components/FormError";
 import SubmitButton from "../../../components/SubmitButton";
@@ -16,7 +16,7 @@ export default function ReservationForm({
   clients: Option[];
   chambres: Option[];
 }) {
-  const [state, formAction] = useFormState(createReservation, initialState);
+  const [state, formAction] = useActionState(createReservation, initialState);
   const disabled = clients.length === 0 || chambres.length === 0;
 
   return (
@@ -143,3 +143,4 @@ export default function ReservationForm({
     </form>
   );
 }
+

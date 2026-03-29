@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { createProduit } from "../../../actions/produits";
 import FormError from "../../../../components/FormError";
 import SubmitButton from "../../../../components/SubmitButton";
@@ -8,7 +8,7 @@ import SubmitButton from "../../../../components/SubmitButton";
 const initialState = { error: "" };
 
 export default function ProduitForm() {
-  const [state, formAction] = useFormState(createProduit, initialState);
+  const [state, formAction] = useActionState(createProduit, initialState);
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -76,3 +76,4 @@ export default function ProduitForm() {
     </form>
   );
 }
+

@@ -13,10 +13,11 @@ const statusTone: Record<string, "info" | "warning" | "success" | "danger"> = {
 export default async function EvenementDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const evenement = await prisma.evenement.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { participants: true },
   });
 

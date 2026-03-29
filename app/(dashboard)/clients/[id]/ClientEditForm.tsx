@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { updateClient } from "../../actions/clients";
 import FormError from "../../../components/FormError";
 import SubmitButton from "../../../components/SubmitButton";
@@ -22,7 +22,7 @@ type ClientData = {
 };
 
 export default function ClientEditForm({ client }: { client: ClientData }) {
-  const [state, formAction] = useFormState(updateClient, initialState);
+  const [state, formAction] = useActionState(updateClient, initialState);
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -157,3 +157,4 @@ export default function ClientEditForm({ client }: { client: ClientData }) {
     </form>
   );
 }
+

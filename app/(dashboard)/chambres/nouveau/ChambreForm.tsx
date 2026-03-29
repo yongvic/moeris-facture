@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { createChambre } from "../../actions/chambres";
 import FormError from "../../../components/FormError";
 import SubmitButton from "../../../components/SubmitButton";
@@ -8,7 +8,7 @@ import SubmitButton from "../../../components/SubmitButton";
 const initialState = { error: "" };
 
 export default function ChambreForm() {
-  const [state, formAction] = useFormState(createChambre, initialState);
+  const [state, formAction] = useActionState(createChambre, initialState);
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -105,3 +105,4 @@ export default function ChambreForm() {
     </form>
   );
 }
+

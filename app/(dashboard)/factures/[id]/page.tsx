@@ -23,10 +23,11 @@ const statusLabel: Record<string, string> = {
 export default async function FactureDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const facture = await prisma.facture.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       client: true,
       consommations: { orderBy: { createdAt: "desc" } },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { updateProduit } from "../../../actions/produits";
 import FormError from "../../../../components/FormError";
 import SubmitButton from "../../../../components/SubmitButton";
@@ -18,7 +18,7 @@ type ProduitData = {
 };
 
 export default function ProduitEditForm({ produit }: { produit: ProduitData }) {
-  const [state, formAction] = useFormState(updateProduit, initialState);
+  const [state, formAction] = useActionState(updateProduit, initialState);
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -100,3 +100,4 @@ export default function ProduitEditForm({ produit }: { produit: ProduitData }) {
     </form>
   );
 }
+

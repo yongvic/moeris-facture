@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { updateFactureStatus } from "../../actions/factures";
 import FormError from "../../../components/FormError";
 import SubmitButton from "../../../components/SubmitButton";
@@ -8,7 +8,7 @@ import SubmitButton from "../../../components/SubmitButton";
 const initialState = { error: "" };
 
 export default function StatusUpdateForm({ factureId }: { factureId: string }) {
-  const [state, formAction] = useFormState(updateFactureStatus, initialState);
+  const [state, formAction] = useActionState(updateFactureStatus, initialState);
 
   return (
     <form action={formAction} className="mt-6 grid gap-3">
@@ -31,3 +31,4 @@ export default function StatusUpdateForm({ factureId }: { factureId: string }) {
     </form>
   );
 }
+

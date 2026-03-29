@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { addParticipant } from "../../actions/evenements";
 import FormError from "../../../components/FormError";
 import SubmitButton from "../../../components/SubmitButton";
@@ -8,7 +8,7 @@ import SubmitButton from "../../../components/SubmitButton";
 const initialState = { error: "" };
 
 export default function ParticipantForm({ evenementId }: { evenementId: string }) {
-  const [state, formAction] = useFormState(addParticipant, initialState);
+  const [state, formAction] = useActionState(addParticipant, initialState);
 
   return (
     <form action={formAction} className="grid gap-3">
@@ -47,3 +47,4 @@ export default function ParticipantForm({ evenementId }: { evenementId: string }
     </form>
   );
 }
+

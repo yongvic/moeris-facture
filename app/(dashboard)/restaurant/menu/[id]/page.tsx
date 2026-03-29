@@ -4,10 +4,11 @@ import ProduitEditForm from "./ProduitEditForm";
 export default async function ProduitDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const produit = await prisma.produit.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
 
   if (!produit) {

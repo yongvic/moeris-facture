@@ -4,10 +4,11 @@ import ReservationEditForm from "./ReservationEditForm";
 export default async function ReservationDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const reservation = await prisma.reservation.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { client: true, chambre: true },
   });
 

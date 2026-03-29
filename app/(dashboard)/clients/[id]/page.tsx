@@ -7,10 +7,11 @@ import StatusBadge from "../../../components/StatusBadge";
 export default async function ClientDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const client = await prisma.client.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       factures: {
         orderBy: { createdAt: "desc" },

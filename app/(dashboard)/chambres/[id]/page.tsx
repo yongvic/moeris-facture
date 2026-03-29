@@ -6,10 +6,11 @@ import ChambreEditForm from "./ChambreEditForm";
 export default async function ChambreDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const chambre = await prisma.chambre.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       reservations: {
         orderBy: { dateArrivee: "desc" },

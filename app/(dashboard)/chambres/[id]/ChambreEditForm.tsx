@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { updateChambre } from "../../actions/chambres";
 import FormError from "../../../components/FormError";
 import SubmitButton from "../../../components/SubmitButton";
@@ -21,7 +21,7 @@ type ChambreData = {
 };
 
 export default function ChambreEditForm({ chambre }: { chambre: ChambreData }) {
-  const [state, formAction] = useFormState(updateChambre, initialState);
+  const [state, formAction] = useActionState(updateChambre, initialState);
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -146,3 +146,4 @@ export default function ChambreEditForm({ chambre }: { chambre: ChambreData }) {
     </form>
   );
 }
+

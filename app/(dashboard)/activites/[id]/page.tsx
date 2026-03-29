@@ -4,10 +4,11 @@ import ActiviteEditForm from "./ActiviteEditForm";
 export default async function ActiviteDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const activite = await prisma.activite.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
 
   if (!activite) {

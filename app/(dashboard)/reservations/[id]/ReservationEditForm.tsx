@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { updateReservation, cancelReservation } from "../../actions/reservations";
 import FormError from "../../../components/FormError";
 import SubmitButton from "../../../components/SubmitButton";
@@ -31,8 +31,8 @@ export default function ReservationEditForm({
   clients: Option[];
   chambres: Option[];
 }) {
-  const [state, formAction] = useFormState(updateReservation, initialState);
-  const [cancelState, cancelAction] = useFormState(cancelReservation, initialState);
+  const [state, formAction] = useActionState(updateReservation, initialState);
+  const [cancelState, cancelAction] = useActionState(cancelReservation, initialState);
 
   return (
     <div className="grid gap-6">
@@ -186,3 +186,4 @@ export default function ReservationEditForm({
     </div>
   );
 }
+

@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { updateActivite } from "../../actions/activites";
 import FormError from "../../../components/FormError";
 import SubmitButton from "../../../components/SubmitButton";
@@ -19,7 +19,7 @@ type ActiviteData = {
 };
 
 export default function ActiviteEditForm({ activite }: { activite: ActiviteData }) {
-  const [state, formAction] = useFormState(updateActivite, initialState);
+  const [state, formAction] = useActionState(updateActivite, initialState);
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -115,3 +115,4 @@ export default function ActiviteEditForm({ activite }: { activite: ActiviteData 
     </form>
   );
 }
+

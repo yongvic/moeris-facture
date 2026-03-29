@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState } from "react-dom";
+import { useActionState } from "react";
 import { updateEvenement } from "../../actions/evenements";
 import FormError from "../../../components/FormError";
 import SubmitButton from "../../../components/SubmitButton";
@@ -26,7 +26,7 @@ export default function EvenementEditForm({
 }: {
   evenement: EvenementData;
 }) {
-  const [state, formAction] = useFormState(updateEvenement, initialState);
+  const [state, formAction] = useActionState(updateEvenement, initialState);
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -177,3 +177,4 @@ export default function EvenementEditForm({
     </form>
   );
 }
+
