@@ -103,7 +103,7 @@ export async function GET(
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Image src={logoSrc} style={styles.logo} alt="Logo Résidence Moeris" />
+          <Image src={logoSrc} style={styles.logo} />
           <View>
             <Text style={styles.title}>Facture</Text>
             <Text style={styles.label}>{facture.numero}</Text>
