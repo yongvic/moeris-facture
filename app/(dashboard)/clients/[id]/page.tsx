@@ -28,7 +28,7 @@ export default async function ClientDetailPage({
   }
 
   const total = client.factures.reduce(
-    (acc, facture) => acc + Number(facture.montantTotal),
+    (acc: number, facture) => acc + Number(facture.montantTotal),
     0
   );
 
