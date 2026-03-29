@@ -39,7 +39,7 @@ export default function PosClient({
   const [error, setError] = useState("");
 
   const total = useMemo(
-    () => cart.reduce((acc, item) => acc + item.prix * item.qty, 0),
+    () => cart.reduce((acc: number, item) => acc + item.prix * item.qty, 0),
     [cart]
   );
 

@@ -121,7 +121,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const montantTotal = payload.items.reduce((acc, item) => {
+    const montantTotal = payload.items.reduce((acc: number, item) => {
       const produit = produitMap.get(item.id);
       if (!produit) return acc;
       return acc + item.qty * Number(produit.prix);

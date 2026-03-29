@@ -138,7 +138,7 @@ export default async function DashboardPage() {
     label: serviceLabels[item.categorie] ?? item.categorie,
     value: Number(item._sum.sousTotal ?? 0),
   }));
-  const totalService = serviceTotals.reduce((acc, item) => acc + item.value, 0);
+  const totalService = serviceTotals.reduce((acc: number, item) => acc + item.value, 0);
   const services = serviceTotals.map((item) => ({
     label: item.label,
     value: totalService ? Math.round((item.value / totalService) * 100) : 0,
