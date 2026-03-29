@@ -75,7 +75,14 @@ export default async function ChambreDetailPage({
                 Aucune réservation pour cette chambre.
               </div>
             ) : (
-              chambre.reservations.map((res) => (
+              chambre.reservations.map(
+                (res: {
+                  id: string;
+                  dateArrivee: Date;
+                  dateDepart: Date;
+                  statut: string;
+                  client?: { prenom: string; nom: string | null } | null;
+                }) => (
                 <Link
                   key={res.id}
                   href={`/reservations/${res.id}`}
@@ -94,7 +101,8 @@ export default async function ChambreDetailPage({
                     {res.statut}
                   </span>
                 </Link>
-              ))
+                )
+              )
             )}
           </div>
         </div>
