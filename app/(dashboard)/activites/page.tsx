@@ -1,9 +1,10 @@
 import Link from "next/link";
+import type { Activite } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
 import { formatXof } from "../../../lib/format";
 
 export default async function ActivitesPage() {
-  const activites = await prisma.activite.findMany({
+  const activites: Activite[] = await prisma.activite.findMany({
     orderBy: { createdAt: "desc" },
     take: 20,
   });
