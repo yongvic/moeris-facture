@@ -109,6 +109,7 @@ export async function GET(
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
             {logoSrc ? (
+              // eslint-disable-next-line jsx-a11y/alt-text
               <Image src={logoSrc} style={styles.logo} />
             ) : (
               <Text style={{ fontSize: 14, fontWeight: "bold" }}>
