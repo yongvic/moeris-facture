@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { PrismaClient } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
 import { requireRole } from "../../../lib/auth-helpers";
 import { factureCreateSchema, factureUpdateSchema } from "../../../lib/validators/facture";
@@ -13,10 +12,7 @@ import { recalcFacture } from "../../../lib/billing";
 import { zodErrorMessage } from "../../../lib/validation";
 
 type FormState = { error?: string };
-type TransactionClient = Omit<
-  PrismaClient,
-  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
->;
+type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 const toNumber = (value: FormDataEntryValue | null) => {
   if (value === null) return null;
