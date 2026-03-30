@@ -2,68 +2,87 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
 
-export default function LoginPage() {
-  const [email, setEmail] = useState("");
+type ResetPasswordFormProps = {
+  token: string;
+};
+
+export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setLoading(true);
     setError("");
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-      callbackUrl: "/dashboard",
-    });
-    setLoading(false);
-    if (result?.error) {
-      setError("Identifiants incorrects. Veuillez réessayer.");
-    } else {
-      window.location.href = result?.url ?? "/dashboard";
+
+    if (!token) {
+      setError("Lien de réinitialisation invalide.");
+      return;
     }
+
+    if (password !== confirmPassword) {
+      setError("Les mots de passe ne correspondent pas.");
+      return;
+    }
+
+    setLoading(true);
+    const response = await fetch("/api/auth/password-reset/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, password }),
+    });
+    const data = await response.json().catch(() => null);
+    setLoading(false);
+
+    if (!response.ok) {
+      setError(data?.error ?? "Impossible de réinitialiser le mot de passe.");
+      return;
+    }
+
+    setSuccess(true);
   };
 
   return (
     <div className="rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-8 shadow-[var(--shadow)]">
       <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--ink-muted)]">
-        Connexion
+        Nouveau mot de passe
       </p>
       <h2 className="mt-1 font-display text-2xl text-[color:var(--ink)]">
-        Accéder à l&apos;espace staff
+        Définir un nouvel accès
       </h2>
       <p className="mt-2 text-sm text-[color:var(--ink-muted)]">
-        Utilisez l&apos;email administrateur fourni pour démarrer.
+        Choisissez un mot de passe fort pour sécuriser le compte.
       </p>
+
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
-          Email
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            autoComplete="email"
-            className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
-            placeholder="admin@moeris.com"
-          />
-        </label>
-        <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
-          Mot de passe
+          Nouveau mot de passe
           <input
             type="password"
             required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            autoComplete="current-password"
+            autoComplete="new-password"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             placeholder="••••••••"
           />
         </label>
+        <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
+          Confirmer le mot de passe
+          <input
+            type="password"
+            required
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            autoComplete="new-password"
+            className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
+            placeholder="••••••••"
+          />
+        </label>
+
         {error ? (
           <p
             role="alert"
@@ -73,27 +92,30 @@ export default function LoginPage() {
             {error}
           </p>
         ) : null}
+
+        {success ? (
+          <div className="rounded-2xl border border-[color:var(--success)]/40 bg-[color:rgba(5,150,105,0.08)] px-4 py-3 text-sm text-[color:var(--success)]">
+            Mot de passe mis à jour. Vous pouvez vous connecter.
+          </div>
+        ) : null}
+
         <button
           type="submit"
           disabled={loading}
           aria-busy={loading}
           className="rounded-full bg-[color:var(--accent)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-70"
         >
-          {loading ? "Connexion..." : "Se connecter"}
+          {loading ? "Mise à jour..." : "Mettre à jour"}
         </button>
       </form>
+
       <div className="mt-6 flex items-center justify-between text-sm text-[color:var(--ink-muted)]">
+        <span>Retour à la connexion</span>
         <Link
-          href="/reset-password"
+          href="/login"
           className="font-semibold text-[color:var(--accent-strong)] hover:text-[color:var(--accent)]"
         >
-          Mot de passe oublié ?
-        </Link>
-        <Link
-          href="/register"
-          className="font-semibold text-[color:var(--accent-strong)] hover:text-[color:var(--accent)]"
-        >
-          Créer un compte
+          Se connecter
         </Link>
       </div>
     </div>
