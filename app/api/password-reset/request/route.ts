@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../../../lib/prisma";
-import { passwordResetRequestSchema } from "../../../../../lib/validators/auth";
-import { zodErrorMessage } from "../../../../../lib/validation";
-import { generateResetToken, hashToken } from "../../../../../lib/auth-tokens";
-import { sendPasswordResetEmail } from "../../../../../lib/email";
-import { getBaseUrl, getRequestIp } from "../../../../../lib/request";
-import { rateLimit } from "../../../../../lib/rate-limit";
+import { prisma } from "../../../../lib/prisma";
+import { passwordResetRequestSchema } from "../../../../lib/validators/auth";
+import { zodErrorMessage } from "../../../../lib/validation";
+import { generateResetToken, hashToken } from "../../../../lib/auth-tokens";
+import { sendPasswordResetEmail } from "../../../../lib/email";
+import { getBaseUrl, getRequestIp } from "../../../../lib/request";
+import { rateLimit } from "../../../../lib/rate-limit";
 
 export async function POST(request: Request) {
   const ip = getRequestIp(request);

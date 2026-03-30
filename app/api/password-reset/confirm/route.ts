@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { prisma } from "../../../../../lib/prisma";
-import { passwordResetSchema } from "../../../../../lib/validators/auth";
-import { zodErrorMessage } from "../../../../../lib/validation";
-import { hashToken } from "../../../../../lib/auth-tokens";
-import { rateLimit } from "../../../../../lib/rate-limit";
-import { getRequestIp } from "../../../../../lib/request";
+import { prisma } from "../../../../lib/prisma";
+import { passwordResetSchema } from "../../../../lib/validators/auth";
+import { zodErrorMessage } from "../../../../lib/validation";
+import { hashToken } from "../../../../lib/auth-tokens";
+import { rateLimit } from "../../../../lib/rate-limit";
+import { getRequestIp } from "../../../../lib/request";
 
 export async function POST(request: Request) {
   const ip = getRequestIp(request);

@@ -30,6 +30,6 @@ export default withAuth(
 );
 
 export const config = {
-  // Pattern standard pour ignorer les assets statiques et Next.js
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.svg|.*\\.png).*)"],
+  // Pattern standard pour ignorer les assets statiques, Next.js et les routes API publiques
+  matcher: ["/((?!api/auth|api/password-reset|_next/static|_next/image|favicon.ico|.*\\.svg|.*\\.png).*)"],
 };

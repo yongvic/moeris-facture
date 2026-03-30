@@ -29,7 +29,7 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     }
 
     setLoading(true);
-    const response = await fetch("/api/auth/password-reset/confirm", {
+    const response = await fetch("/api/password-reset/confirm", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token, password }),

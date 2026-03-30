@@ -7,10 +7,19 @@ export function getRequestIp(request: Request) {
 }
 
 export function getBaseUrl(request: Request) {
+  // Explicit override always wins (set this in Vercel env vars for your custom domain)
   const envUrl = process.env.APP_URL ?? process.env.NEXTAUTH_URL;
   if (envUrl) {
     return envUrl.replace(/\/$/, "");
   }
+
+  // Vercel automatically sets VERCEL_URL with the deployment hostname (no protocol)
+  const vercelUrl = process.env.VERCEL_URL;
+  if (vercelUrl) {
+    return `https://${vercelUrl}`;
+  }
+
+  // Fallback: derive from the incoming request
   const origin = request.headers.get("origin");
   if (origin) {
     return origin.replace(/\/$/, "");
@@ -20,5 +29,6 @@ export function getBaseUrl(request: Request) {
   if (host) {
     return `${proto}://${host}`;
   }
+
   return "http://localhost:3000";
 }
