@@ -12,24 +12,24 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  const adminEmail = process.env.ADMIN_EMAIL;
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  const adminNom = process.env.ADMIN_NOM ?? "Banenga";
-  const adminPrenom = process.env.ADMIN_PRENOM ?? "Admin";
+  const email = "banenga26@gmail.com";
+  const password = "Colasucre2006";
 
-  await syncAdminUser(prisma, {
-    email: adminEmail ?? "",
-    password: adminPassword ?? "",
-    nom: adminNom,
-    prenom: adminPrenom,
+  console.log("--- Force Reset Admin ---");
+
+  const user = await syncAdminUser(prisma, {
+    email,
+    password,
+    nom: "Banenga",
+    prenom: "Admin",
   });
+
+  console.log("Utilisateur Admin synchronisé avec succès !");
+  console.log("Email:", user.email);
 }
 
 main()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  })
+  .catch(console.error)
   .finally(async () => {
     await prisma.$disconnect();
     await pool.end();
