@@ -171,36 +171,43 @@ export async function addPaiement(
     return { error: "Référence obligatoire pour virement ou mobile money." };
   }
 
-  const facture = await prisma.facture.findUnique({
-    where: { id: parsed.data.factureId },
-    select: { montantTotal: true, montantPaye: true, statut: true },
-  });
+  const result = await prisma.$transaction(async (tx) => {
+    const facture = await tx.facture.findUnique({
+      where: { id: parsed.data.factureId },
+      select: { montantTotal: true, montantPaye: true, statut: true },
+    });
 
-  if (!facture) {
-    return { error: "Facture introuvable." };
+    if (!facture) {
+      throw new Error("Facture introuvable.");
+    }
+    if (facture.statut === "ANNULEE") {
+      throw new Error("Impossible d'encaisser une facture annulée.");
+    }
+
+    const total = Number(facture.montantTotal);
+    const paid = Number(facture.montantPaye);
+    const remaining = Math.max(0, total - paid);
+    if (parsed.data.montant > remaining) {
+      throw new Error("Le montant dépasse le reste à payer.");
+    }
+
+    await tx.paiement.create({
+      data: {
+        factureId: parsed.data.factureId,
+        montant: parsed.data.montant,
+        modePaiement: parsed.data.modePaiement,
+        reference: parsed.data.reference ?? null,
+        note: parsed.data.note ?? null,
+      },
+    });
+
+    return await recalcFacture(parsed.data.factureId, tx);
+  }).catch(e => ({ error: e.message }));
+
+  if ('error' in result) {
+    return { error: result.error };
   }
-  if (facture.statut === "ANNULEE") {
-    return { error: "Impossible d'encaisser une facture annulée." };
-  }
 
-  const total = Number(facture.montantTotal);
-  const paid = Number(facture.montantPaye);
-  const remaining = Math.max(0, total - paid);
-  if (parsed.data.montant > remaining) {
-    return { error: "Le montant dépasse le reste à payer." };
-  }
-
-  await prisma.paiement.create({
-    data: {
-      factureId: parsed.data.factureId,
-      montant: parsed.data.montant,
-      modePaiement: parsed.data.modePaiement,
-      reference: parsed.data.reference ?? null,
-      note: parsed.data.note ?? null,
-    },
-  });
-
-  await recalcFacture(parsed.data.factureId);
   revalidatePath(`/factures/${parsed.data.factureId}`);
   revalidatePath("/factures");
   return {};

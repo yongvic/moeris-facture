@@ -3,10 +3,16 @@ import Link from "next/link";
 import SidebarNav from "../components/SidebarNav";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../lib/auth";
+import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
-  const user = session?.user;
+  
+  if (!session) {
+    redirect("/login");
+  }
+
+  const user = session.user;
 
   return (
     <div className="min-h-screen">

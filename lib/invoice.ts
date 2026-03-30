@@ -5,16 +5,33 @@ type PrismaLike = Omit<typeof prisma, "$connect" | "$disconnect" | "$on" | "$tra
 export async function generateFactureNumero(client: PrismaLike = prisma) {
   const now = new Date();
   const year = now.getFullYear();
-  const start = new Date(year, 0, 1);
-  const end = new Date(year + 1, 0, 1);
 
   const lockKey = 910000 + year;
   await client.$executeRaw`SELECT pg_advisory_xact_lock(${lockKey})`;
 
-  const count = await client.facture.count({
-    where: { createdAt: { gte: start, lt: end } },
+  const lastFacture = await client.facture.findFirst({
+    where: {
+      numero: {
+        startsWith: `FAC-${year}-`,
+      },
+    },
+    orderBy: {
+      numero: "desc",
+    },
+    select: {
+      numero: true,
+    },
   });
 
-  const seq = String(count + 1).padStart(4, "0");
+  let nextSeq = 1;
+  if (lastFacture) {
+    const parts = lastFacture.numero.split("-");
+    const lastSeq = parseInt(parts[2], 10);
+    if (!isNaN(lastSeq)) {
+      nextSeq = lastSeq + 1;
+    }
+  }
+
+  const seq = String(nextSeq).padStart(4, "0");
   return `FAC-${year}-${seq}`;
 }
