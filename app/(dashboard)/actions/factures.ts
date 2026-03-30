@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Prisma } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 import { prisma } from "../../../lib/prisma";
 import { requireRole } from "../../../lib/auth-helpers";
 import { factureCreateSchema, factureUpdateSchema } from "../../../lib/validators/facture";
@@ -13,6 +13,10 @@ import { recalcFacture } from "../../../lib/billing";
 import { zodErrorMessage } from "../../../lib/validation";
 
 type FormState = { error?: string };
+type TransactionClient = Omit<
+  PrismaClient,
+  "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
+>;
 
 const toNumber = (value: FormDataEntryValue | null) => {
   if (value === null) return null;
@@ -47,7 +51,7 @@ export async function createFacture(
     return { error: zodErrorMessage(parsed.error) };
   }
 
-  const facture = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  const facture = await prisma.$transaction(async (tx: TransactionClient) => {
     const numero = await generateFactureNumero(tx);
     return tx.facture.create({
       data: {
