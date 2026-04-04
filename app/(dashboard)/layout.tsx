@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import SidebarNav from "../components/SidebarNav";
 import SessionControls from "../components/SessionControls";
 import { getServerSession } from "next-auth";
@@ -20,12 +21,19 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     <div className="min-h-screen">
       <div className="flex min-h-screen">
         <aside className="sticky top-0 hidden h-screen w-64 flex-col gap-8 border-r border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-6 py-8 md:flex">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
+            <div className="relative h-10 w-40">
+              <Image
+                src="/logo_typo.png"
+                alt="Résidence Moeris"
+                fill
+                sizes="160px"
+                className="object-contain object-left"
+                priority
+              />
+            </div>
             <span className="text-xs uppercase tracking-[0.3em] text-[color:var(--ink-muted)]">
-              Résidence
-            </span>
-            <span className="font-display text-2xl text-[color:var(--ink)]">
-              Moeris
+              Résidence hôtelière
             </span>
           </div>
           <SidebarNav role={user?.role} />
@@ -42,13 +50,25 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
         <div className="flex min-h-screen flex-1 flex-col">
           <header className="sticky top-0 z-10 flex flex-col gap-4 border-b border-[color:var(--stroke)] bg-[color:var(--paper)]/95 px-4 py-4 backdrop-blur md:flex-row md:items-center md:justify-between md:px-8">
-            <div>
+            <div className="flex items-center gap-3">
+              <div className="relative h-10 w-28 md:hidden">
+                <Image
+                  src="/logo_typo.png"
+                  alt="Résidence Moeris"
+                  fill
+                  sizes="112px"
+                  className="object-contain object-left"
+                  priority
+                />
+              </div>
               <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--ink-muted)]">
                 Suite opérationnelle
               </p>
-              <h1 className="font-display text-2xl text-[color:var(--ink)]">
-                Centre de pilotage
-              </h1>
+              <div>
+                <h1 className="font-display text-2xl text-[color:var(--ink)]">
+                  Centre de pilotage
+                </h1>
+              </div>
             </div>
             <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
               <div className="flex gap-2">

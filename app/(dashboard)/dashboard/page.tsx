@@ -1,3 +1,4 @@
+import Image from "next/image";
 import StatCard from "../../components/StatCard";
 import StatusBadge from "../../components/StatusBadge";
 import { prisma } from "../../../lib/prisma";
@@ -146,6 +147,33 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
+      <section className="rounded-[2rem] border border-[color:var(--stroke)] bg-[linear-gradient(135deg,rgba(184,141,14,0.12),rgba(255,255,255,0.92))] p-6 shadow-[var(--shadow)]">
+        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--ink-muted)]">
+              Résidence Moeris
+            </p>
+            <h2 className="mt-2 font-display text-3xl text-[color:var(--ink)]">
+              Vue d’ensemble opérationnelle
+            </h2>
+            <p className="mt-3 text-sm text-[color:var(--ink-muted)]">
+              Hébergement, restauration, événements et encaissements centralisés
+              autour d’une même identité de marque.
+            </p>
+          </div>
+          <div className="relative h-16 w-56 shrink-0 md:h-20 md:w-64">
+            <Image
+              src="/logo_typo.png"
+              alt="Résidence Moeris"
+              fill
+              sizes="(max-width: 768px) 224px, 256px"
+              className="object-contain object-left md:object-right"
+              priority
+            />
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {kpis.map((kpi) => (
           <StatCard

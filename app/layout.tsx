@@ -16,6 +16,15 @@ export const metadata: Metadata = {
   title: "Résidence Moeris — Ops Suite",
   description:
     "Plateforme de gestion hôtelière multiservice pour la Résidence Moeris.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logo_typo.png", type: "image/png" },
+    ],
+    shortcut: ["/favicon.ico"],
+    apple: [{ url: "/logo_typo.png", type: "image/png" }],
+  },
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({
