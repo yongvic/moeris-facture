@@ -10,8 +10,13 @@ import { zodErrorMessage } from "../../../lib/validation";
 import { generateFactureNumero } from "../../../lib/invoice";
 import { recalcFacture } from "../../../lib/billing";
 import { createAuditLog } from "../../../lib/audit";
+import { parseCsvFile, parseNullableString } from "../../../lib/csv";
 
-type FormState = { error?: string };
+type FormState = {
+  error?: string;
+  message?: string;
+  values?: Record<string, string>;
+};
 type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 const normalize = (value: FormDataEntryValue | null) => {
@@ -77,6 +82,19 @@ export async function createEvenement(
   const gate = await requireRole("MANAGER");
   if ("error" in gate) return { error: "Non autorisé." };
 
+  const values = {
+    titre: formData.get("titre")?.toString() ?? "",
+    type: formData.get("type")?.toString() ?? "SOIREE",
+    description: formData.get("description")?.toString() ?? "",
+    dateDebut: formData.get("dateDebut")?.toString() ?? "",
+    dateFin: formData.get("dateFin")?.toString() ?? "",
+    capaciteMax: formData.get("capaciteMax")?.toString() ?? "",
+    prixParParticipant: formData.get("prixParParticipant")?.toString() ?? "",
+    prixForfait: formData.get("prixForfait")?.toString() ?? "",
+    acompteRequis: formData.get("acompteRequis")?.toString() ?? "",
+    statut: formData.get("statut")?.toString() ?? "A_VENIR",
+  };
+
   const payload = {
     titre: normalize(formData.get("titre")) ?? "",
     type: normalize(formData.get("type")) ?? "SOIREE",
@@ -92,16 +110,16 @@ export async function createEvenement(
 
   const parsed = evenementCreateSchema.safeParse(payload);
   if (!parsed.success) {
-    return { error: zodErrorMessage(parsed.error) };
+    return { error: zodErrorMessage(parsed.error), values };
   }
 
   const dateDebut = new Date(parsed.data.dateDebut);
   const dateFin = new Date(parsed.data.dateFin);
   if (Number.isNaN(dateDebut.getTime()) || Number.isNaN(dateFin.getTime())) {
-    return { error: "Dates invalides." };
+    return { error: "Dates invalides.", values };
   }
   if (dateFin < dateDebut) {
-    return { error: "La date de fin doit être après la date de début." };
+    return { error: "La date de fin doit être après la date de début.", values };
   }
 
   const evenement = await prisma.evenement.create({
@@ -113,6 +131,12 @@ export async function createEvenement(
   });
 
   revalidatePath("/evenements");
+  await createAuditLog({
+    actorId: gate.session.user?.id ?? null,
+    action: "EVENEMENT_CREATED",
+    entityType: "Evenement",
+    entityId: evenement.id,
+  });
   redirect(`/evenements/${evenement.id}`);
 }
 
@@ -125,6 +149,19 @@ export async function updateEvenement(
 
   const id = formData.get("id")?.toString();
   if (!id) return { error: "Événement introuvable." };
+
+  const values = {
+    titre: formData.get("titre")?.toString() ?? "",
+    type: formData.get("type")?.toString() ?? "SOIREE",
+    description: formData.get("description")?.toString() ?? "",
+    dateDebut: formData.get("dateDebut")?.toString() ?? "",
+    dateFin: formData.get("dateFin")?.toString() ?? "",
+    capaciteMax: formData.get("capaciteMax")?.toString() ?? "",
+    prixParParticipant: formData.get("prixParParticipant")?.toString() ?? "",
+    prixForfait: formData.get("prixForfait")?.toString() ?? "",
+    acompteRequis: formData.get("acompteRequis")?.toString() ?? "",
+    statut: formData.get("statut")?.toString() ?? "",
+  };
 
   const payload = {
     titre: normalize(formData.get("titre")) ?? "",
@@ -141,7 +178,7 @@ export async function updateEvenement(
 
   const parsed = evenementUpdateSchema.safeParse(payload);
   if (!parsed.success) {
-    return { error: zodErrorMessage(parsed.error) };
+    return { error: zodErrorMessage(parsed.error), values };
   }
 
   if (parsed.data.dateDebut || parsed.data.dateFin) {
@@ -153,10 +190,10 @@ export async function updateEvenement(
       (dateDebut && Number.isNaN(dateDebut.getTime())) ||
       (dateFin && Number.isNaN(dateFin.getTime()))
     ) {
-      return { error: "Dates invalides." };
+      return { error: "Dates invalides.", values };
     }
     if (dateDebut && dateFin && dateFin < dateDebut) {
-      return { error: "La date de fin doit être après la date de début." };
+      return { error: "La date de fin doit être après la date de début.", values };
     }
   }
 
@@ -173,6 +210,12 @@ export async function updateEvenement(
 
   revalidatePath(`/evenements/${id}`);
   revalidatePath("/evenements");
+  await createAuditLog({
+    actorId: gate.session.user?.id ?? null,
+    action: "EVENEMENT_UPDATED",
+    entityType: "Evenement",
+    entityId: id,
+  });
   return {};
 }
 
@@ -194,7 +237,15 @@ export async function addParticipant(
   const evenementId = formData.get("evenementId")?.toString();
   if (!evenementId) return { error: "Événement introuvable." };
 
-  const payload = {
+  const values = {
+    prenom: formData.get("prenom")?.toString() ?? "",
+    nom: formData.get("nom")?.toString() ?? "",
+    contact: formData.get("contact")?.toString() ?? "",
+    acomptePaye: formData.get("acomptePaye")?.toString() ?? "",
+    clientId: formData.get("clientId")?.toString() ?? "",
+  };
+
+  const rawPayload = {
     nom: normalize(formData.get("nom")) ?? "",
     prenom: normalize(formData.get("prenom")) ?? "",
     contact: normalize(formData.get("contact")),
@@ -202,9 +253,30 @@ export async function addParticipant(
     clientId: normalize(formData.get("clientId")),
   };
 
+  let payload = rawPayload;
+  if (rawPayload.clientId) {
+    const existingClient = await prisma.client.findUnique({
+      where: { id: rawPayload.clientId },
+      select: { prenom: true, nom: true, telephone: true },
+    });
+    if (!existingClient) {
+      return { error: "Client introuvable.", values };
+    }
+
+    payload = {
+      ...rawPayload,
+      prenom: existingClient.prenom,
+      nom: existingClient.nom ?? (rawPayload.nom || existingClient.prenom),
+      contact: existingClient.telephone ?? rawPayload.contact,
+    };
+  }
+
   const parsed = participantSchema.safeParse(payload);
   if (!parsed.success) {
-    return { error: zodErrorMessage(parsed.error, "Participant invalide.") };
+    return {
+      error: zodErrorMessage(parsed.error, "Participant invalide."),
+      values,
+    };
   }
 
   const evenement = await prisma.evenement.findUnique({
@@ -225,7 +297,7 @@ export async function addParticipant(
     evenement.capaciteMax &&
     evenement._count.participants >= evenement.capaciteMax
   ) {
-    return { error: "Capacité maximale atteinte." };
+    return { error: "Capacité maximale atteinte.", values };
   }
 
   const acomptePaye = parsed.data.acomptePaye ?? null;
@@ -239,11 +311,11 @@ export async function addParticipant(
     evenement.acompteRequis &&
     acomptePaye < Number(evenement.acompteRequis)
   ) {
-    return { error: "L'acompte saisi est inférieur à l'acompte requis." };
+    return { error: "L'acompte saisi est inférieur à l'acompte requis.", values };
   }
 
   if (acomptePaye !== null && prixParParticipant > 0 && acomptePaye > prixParParticipant) {
-    return { error: "L'acompte ne peut pas dépasser le prix participant." };
+    return { error: "L'acompte ne peut pas dépasser le prix participant.", values };
   }
 
   try {
@@ -393,9 +465,99 @@ export async function addParticipant(
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Impossible d'ajouter le participant.",
+      values,
     };
   }
 
   revalidatePath(`/evenements/${evenementId}`);
   return {};
+}
+
+export async function importEvenementsCsv(
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const gate = await requireRole("MANAGER");
+  if ("error" in gate) return { error: "Non autorisé." };
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Fichier CSV requis." };
+  }
+
+  let rows;
+  try {
+    rows = await parseCsvFile(file);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "CSV illisible." };
+  }
+
+  let imported = 0;
+  const errors: string[] = [];
+
+  for (const [index, row] of rows.entries()) {
+    const payload = {
+      titre: parseNullableString(row.titre) ?? "",
+      type: parseNullableString(row.type) ?? "SOIREE",
+      description: parseNullableString(row.description),
+      dateDebut: parseNullableString(row.dateDebut) ?? "",
+      dateFin: parseNullableString(row.dateFin) ?? "",
+      capaciteMax: row.capaciteMax ? Number(row.capaciteMax) : null,
+      prixParParticipant: row.prixParParticipant
+        ? Number(row.prixParParticipant)
+        : null,
+      prixForfait: row.prixForfait ? Number(row.prixForfait) : null,
+      acompteRequis: row.acompteRequis ? Number(row.acompteRequis) : null,
+      statut: parseNullableString(row.statut) ?? "A_VENIR",
+    };
+
+    const parsed = evenementCreateSchema.safeParse(payload);
+    if (!parsed.success) {
+      errors.push(`Ligne ${index + 2}: ${zodErrorMessage(parsed.error)}`);
+      continue;
+    }
+
+    const dateDebut = new Date(parsed.data.dateDebut);
+    const dateFin = new Date(parsed.data.dateFin);
+    if (
+      Number.isNaN(dateDebut.getTime()) ||
+      Number.isNaN(dateFin.getTime()) ||
+      dateFin < dateDebut
+    ) {
+      errors.push(`Ligne ${index + 2}: dates invalides.`);
+      continue;
+    }
+
+    try {
+      await prisma.evenement.create({
+        data: {
+          ...parsed.data,
+          dateDebut,
+          dateFin,
+        },
+      });
+      imported += 1;
+    } catch {
+      errors.push(`Ligne ${index + 2}: échec d'import.`);
+    }
+  }
+
+  revalidatePath("/evenements");
+  await createAuditLog({
+    actorId: gate.session.user?.id ?? null,
+    action: "EVENEMENTS_IMPORTED",
+    entityType: "Evenement",
+    details: { imported, errors: errors.length },
+  });
+
+  if (imported === 0) {
+    return { error: errors[0] ?? "Aucun événement importé." };
+  }
+
+  return {
+    message:
+      errors.length > 0
+        ? `${imported} événements importés, ${errors.length} lignes ignorées.`
+        : `${imported} événements importés.`,
+  };
 }

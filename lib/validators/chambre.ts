@@ -8,8 +8,9 @@ export const chambreCreateSchema = z.object({
   prixNuit: z.number().min(0, "Prix par nuit invalide"),
   description: z.string().optional().nullable(),
   equipements: z.array(z.string()).default([]),
+  photoUrls: z.array(z.string()).default([]),
   statut: z
-    .enum(["DISPONIBLE", "OCCUPEE", "MAINTENANCE", "HORS_SERVICE"])
+    .enum(["DISPONIBLE", "RESERVEE", "OCCUPEE", "MAINTENANCE", "HORS_SERVICE"])
     .optional(),
   etage: z.number().min(0, "Étage invalide").optional().nullable(),
 });

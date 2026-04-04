@@ -27,6 +27,7 @@ export default function EvenementEditForm({
   evenement: EvenementData;
 }) {
   const [state, formAction] = useActionState(updateEvenement, initialState);
+  const values = state.values ?? {};
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -37,7 +38,7 @@ export default function EvenementEditForm({
           <input
             name="titre"
             required
-            defaultValue={evenement.titre}
+            defaultValue={values.titre ?? evenement.titre}
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             placeholder="Ex. Soirée Jazz"
           />
@@ -46,7 +47,7 @@ export default function EvenementEditForm({
           Type
           <select
             name="type"
-            defaultValue={evenement.type}
+            defaultValue={values.type ?? evenement.type}
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           >
             <option value="SOIREE">SOIREE</option>
@@ -66,7 +67,9 @@ export default function EvenementEditForm({
             name="dateDebut"
             type="datetime-local"
             required
-            defaultValue={evenement.dateDebut.toISOString().slice(0, 16)}
+            defaultValue={
+              values.dateDebut ?? evenement.dateDebut.toISOString().slice(0, 16)
+            }
             aria-describedby="dates-help"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
@@ -77,7 +80,9 @@ export default function EvenementEditForm({
             name="dateFin"
             type="datetime-local"
             required
-            defaultValue={evenement.dateFin.toISOString().slice(0, 16)}
+            defaultValue={
+              values.dateFin ?? evenement.dateFin.toISOString().slice(0, 16)
+            }
             aria-describedby="dates-help"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
@@ -94,7 +99,7 @@ export default function EvenementEditForm({
             name="capaciteMax"
             type="number"
             min={1}
-            defaultValue={evenement.capaciteMax ?? ""}
+            defaultValue={values.capaciteMax ?? evenement.capaciteMax ?? ""}
             inputMode="numeric"
             placeholder="Optionnel"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
@@ -106,7 +111,9 @@ export default function EvenementEditForm({
             name="prixParParticipant"
             type="number"
             step="0.01"
-            defaultValue={evenement.prixParParticipant ?? ""}
+            defaultValue={
+              values.prixParParticipant ?? evenement.prixParParticipant ?? ""
+            }
             min={0}
             inputMode="decimal"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
@@ -118,7 +125,7 @@ export default function EvenementEditForm({
             name="prixForfait"
             type="number"
             step="0.01"
-            defaultValue={evenement.prixForfait ?? ""}
+            defaultValue={values.prixForfait ?? evenement.prixForfait ?? ""}
             min={0}
             inputMode="decimal"
             placeholder="Optionnel"
@@ -131,7 +138,7 @@ export default function EvenementEditForm({
             name="acompteRequis"
             type="number"
             step="0.01"
-            defaultValue={evenement.acompteRequis ?? ""}
+            defaultValue={values.acompteRequis ?? evenement.acompteRequis ?? ""}
             min={0}
             inputMode="decimal"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
@@ -143,7 +150,7 @@ export default function EvenementEditForm({
         Statut
         <select
           name="statut"
-          defaultValue={evenement.statut}
+          defaultValue={values.statut ?? evenement.statut}
           className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
         >
           <option value="A_VENIR">A_VENIR</option>
@@ -158,7 +165,7 @@ export default function EvenementEditForm({
         <textarea
           name="description"
           rows={3}
-          defaultValue={evenement.description ?? ""}
+          defaultValue={values.description ?? evenement.description ?? ""}
           aria-describedby="description-help"
           className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
         />

@@ -4,6 +4,7 @@ import { requireRole } from "../../../../lib/auth-helpers";
 import { reservationUpdateSchema } from "../../../../lib/validators/reservation";
 import {
   ReservationServiceError,
+  transitionReservationStatus,
   updateReservationRecord,
 } from "../../../../lib/services/reservations";
 
@@ -72,35 +73,20 @@ export async function DELETE(
 
   const current = await prisma.reservation.findUnique({
     where: { id },
-    select: { id: true, statut: true, chambreId: true },
+    select: { id: true },
   });
   if (!current) {
     return NextResponse.json({ error: "Réservation introuvable" }, { status: 404 });
   }
-  if (current.statut === "CHECK_OUT_EFFECTUE") {
-    return NextResponse.json(
-      { error: "Impossible d'annuler un séjour déjà clôturé." },
-      { status: 400 }
-    );
-  }
 
-  const reservation = await prisma.$transaction(async (tx) => {
-    const updated = await tx.reservation.update({
-      where: { id },
-      data: {
-        statut: "ANNULEE",
-        checkOutAt:
-          current.statut === "CHECK_IN_EFFECTUE" ? new Date() : undefined,
-      },
-    });
-    if (current.statut === "CHECK_IN_EFFECTUE") {
-      await tx.chambre.update({
-        where: { id: current.chambreId },
-        data: { statut: "DISPONIBLE" },
-      });
+  try {
+    const reservation = await transitionReservationStatus(id, "ANNULEE");
+    return NextResponse.json({ data: reservation });
+  } catch (error) {
+    if (error instanceof ReservationServiceError) {
+      const status = error.message === "Réservation introuvable." ? 404 : 400;
+      return NextResponse.json({ error: error.message }, { status });
     }
-    return updated;
-  });
-
-  return NextResponse.json({ data: reservation });
+    throw error;
+  }
 }

@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { prisma } from "../../../lib/prisma";
 import { requireRole } from "../../../lib/auth-helpers";
 import {
   reservationCreateSchema,
@@ -11,12 +10,13 @@ import {
 import {
   createReservationRecord,
   ReservationServiceError,
+  transitionReservationStatus,
   updateReservationRecord,
 } from "../../../lib/services/reservations";
 import { zodErrorMessage } from "../../../lib/validation";
 import { createAuditLog } from "../../../lib/audit";
 
-type FormState = { error?: string };
+type FormState = { error?: string; values?: Record<string, string> };
 
 const normalize = (value: FormDataEntryValue | null) => {
   if (value === null) return null;
@@ -37,6 +37,18 @@ export async function createReservation(
   const gate = await requireRole("STAFF");
   if ("error" in gate) return { error: "Non autorisé." };
 
+  const values = {
+    clientId: formData.get("clientId")?.toString() ?? "",
+    chambreId: formData.get("chambreId")?.toString() ?? "",
+    dateArrivee: formData.get("dateArrivee")?.toString() ?? "",
+    dateDepart: formData.get("dateDepart")?.toString() ?? "",
+    nombreNuits: formData.get("nombreNuits")?.toString() ?? "",
+    prixNegocie: formData.get("prixNegocie")?.toString() ?? "",
+    nombreAdultes: formData.get("nombreAdultes")?.toString() ?? "1",
+    nombreEnfants: formData.get("nombreEnfants")?.toString() ?? "0",
+    notes: formData.get("notes")?.toString() ?? "",
+  };
+
   const payload = {
     clientId: normalize(formData.get("clientId")) ?? "",
     chambreId: normalize(formData.get("chambreId")) ?? "",
@@ -51,7 +63,7 @@ export async function createReservation(
 
   const parsed = reservationCreateSchema.safeParse(payload);
   if (!parsed.success) {
-    return { error: zodErrorMessage(parsed.error) };
+    return { error: zodErrorMessage(parsed.error), values };
   }
 
   let reservation;
@@ -59,12 +71,13 @@ export async function createReservation(
     reservation = await createReservationRecord(parsed.data);
   } catch (error) {
     if (error instanceof ReservationServiceError) {
-      return { error: error.message };
+      return { error: error.message, values };
     }
     throw error;
   }
 
   revalidatePath("/reservations");
+  revalidatePath("/factures");
   await createAuditLog({
     actorId: gate.session.user?.id ?? null,
     action: "RESERVATION_CREATED",
@@ -88,6 +101,18 @@ export async function updateReservation(
   const id = formData.get("id")?.toString();
   if (!id) return { error: "Réservation introuvable." };
 
+  const values = {
+    clientId: formData.get("clientId")?.toString() ?? "",
+    chambreId: formData.get("chambreId")?.toString() ?? "",
+    dateArrivee: formData.get("dateArrivee")?.toString() ?? "",
+    dateDepart: formData.get("dateDepart")?.toString() ?? "",
+    nombreNuits: formData.get("nombreNuits")?.toString() ?? "",
+    prixNegocie: formData.get("prixNegocie")?.toString() ?? "",
+    nombreAdultes: formData.get("nombreAdultes")?.toString() ?? "1",
+    nombreEnfants: formData.get("nombreEnfants")?.toString() ?? "0",
+    notes: formData.get("notes")?.toString() ?? "",
+  };
+
   const payload = {
     clientId: normalize(formData.get("clientId")) ?? "",
     chambreId: normalize(formData.get("chambreId")) ?? "",
@@ -102,20 +127,21 @@ export async function updateReservation(
 
   const parsed = reservationUpdateSchema.safeParse(payload);
   if (!parsed.success) {
-    return { error: zodErrorMessage(parsed.error) };
+    return { error: zodErrorMessage(parsed.error), values };
   }
 
   try {
     await updateReservationRecord(id, parsed.data);
   } catch (error) {
     if (error instanceof ReservationServiceError) {
-      return { error: error.message };
+      return { error: error.message, values };
     }
     throw error;
   }
 
   revalidatePath(`/reservations/${id}`);
   revalidatePath("/reservations");
+  revalidatePath("/factures");
   await createAuditLog({
     actorId: gate.session.user?.id ?? null,
     action: "RESERVATION_UPDATED",
@@ -136,44 +162,26 @@ export async function cancelReservation(
   const id = formData.get("id")?.toString();
   if (!id) return { error: "Réservation introuvable." };
 
-  const reservation = await prisma.reservation.findUnique({
-    where: { id },
-    select: { id: true, statut: true, chambreId: true },
-  });
-  if (!reservation) return { error: "Réservation introuvable." };
-  if (reservation.statut === "CHECK_OUT_EFFECTUE") {
-    return { error: "Impossible d'annuler un séjour déjà clôturé." };
+  try {
+    await transitionReservationStatus(id, "ANNULEE");
+  } catch (error) {
+    if (error instanceof ReservationServiceError) {
+      return { error: error.message };
+    }
+    throw error;
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.reservation.update({
-      where: { id },
-      data: {
-        statut: "ANNULEE",
-        checkOutAt:
-          reservation.statut === "CHECK_IN_EFFECTUE" ? new Date() : undefined,
-      },
-    });
-    if (reservation.statut === "CHECK_IN_EFFECTUE") {
-      await tx.chambre.update({
-        where: { id: reservation.chambreId },
-        data: { statut: "DISPONIBLE" },
-      });
-    }
-    await createAuditLog(
-      {
-        actorId: gate.session.user?.id ?? null,
-        action: "RESERVATION_CANCELLED",
-        entityType: "Reservation",
-        entityId: id,
-      },
-      tx
-    );
+  await createAuditLog({
+    actorId: gate.session.user?.id ?? null,
+    action: "RESERVATION_CANCELLED",
+    entityType: "Reservation",
+    entityId: id,
   });
 
   revalidatePath(`/reservations/${id}`);
   revalidatePath("/reservations");
   revalidatePath("/chambres");
+  revalidatePath("/factures");
   return {};
 }
 
@@ -187,51 +195,20 @@ export async function checkInReservation(
   const id = formData.get("id")?.toString();
   if (!id) return { error: "Réservation introuvable." };
 
-  const reservation = await prisma.reservation.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      statut: true,
-      chambreId: true,
-      chambre: { select: { statut: true } },
-    },
-  });
-
-  if (!reservation) return { error: "Réservation introuvable." };
-  if (reservation.statut === "CHECK_OUT_EFFECTUE") {
-    return { error: "Le séjour est déjà clôturé." };
-  }
-  if (reservation.statut === "CHECK_IN_EFFECTUE") {
-    return { error: "Le check-in a déjà été effectué." };
-  }
-  if (reservation.statut === "ANNULEE" || reservation.statut === "NO_SHOW") {
-    return { error: "Cette réservation ne peut pas passer en check-in." };
-  }
-  if (reservation.chambre.statut !== "DISPONIBLE") {
-    return { error: "La chambre n'est pas disponible pour un check-in." };
+  try {
+    await transitionReservationStatus(id, "CHECK_IN_EFFECTUE");
+  } catch (error) {
+    if (error instanceof ReservationServiceError) {
+      return { error: error.message };
+    }
+    throw error;
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.reservation.update({
-      where: { id },
-      data: {
-        statut: "CHECK_IN_EFFECTUE",
-        checkInAt: new Date(),
-      },
-    });
-    await tx.chambre.update({
-      where: { id: reservation.chambreId },
-      data: { statut: "OCCUPEE" },
-    });
-    await createAuditLog(
-      {
-        actorId: gate.session.user?.id ?? null,
-        action: "RESERVATION_CHECK_IN",
-        entityType: "Reservation",
-        entityId: id,
-      },
-      tx
-    );
+  await createAuditLog({
+    actorId: gate.session.user?.id ?? null,
+    action: "RESERVATION_CHECK_IN",
+    entityType: "Reservation",
+    entityId: id,
   });
 
   revalidatePath(`/reservations/${id}`);
@@ -250,41 +227,79 @@ export async function checkOutReservation(
   const id = formData.get("id")?.toString();
   if (!id) return { error: "Réservation introuvable." };
 
-  const reservation = await prisma.reservation.findUnique({
-    where: { id },
-    select: { id: true, statut: true, chambreId: true },
-  });
-
-  if (!reservation) return { error: "Réservation introuvable." };
-  if (reservation.statut !== "CHECK_IN_EFFECTUE") {
-    return { error: "Le check-out nécessite un check-in préalable." };
+  try {
+    await transitionReservationStatus(id, "CHECK_OUT_EFFECTUE");
+  } catch (error) {
+    if (error instanceof ReservationServiceError) {
+      return { error: error.message };
+    }
+    throw error;
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.reservation.update({
-      where: { id },
-      data: {
-        statut: "CHECK_OUT_EFFECTUE",
-        checkOutAt: new Date(),
-      },
-    });
-    await tx.chambre.update({
-      where: { id: reservation.chambreId },
-      data: { statut: "DISPONIBLE" },
-    });
-    await createAuditLog(
-      {
-        actorId: gate.session.user?.id ?? null,
-        action: "RESERVATION_CHECK_OUT",
-        entityType: "Reservation",
-        entityId: id,
-      },
-      tx
-    );
+  await createAuditLog({
+    actorId: gate.session.user?.id ?? null,
+    action: "RESERVATION_CHECK_OUT",
+    entityType: "Reservation",
+    entityId: id,
   });
 
   revalidatePath(`/reservations/${id}`);
   revalidatePath("/reservations");
   revalidatePath("/chambres");
+  return {};
+}
+
+export async function changeReservationStatus(
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const id = formData.get("id")?.toString();
+  const statut = formData.get("statut")?.toString();
+  if (!id || !statut) return { error: "Paramètres invalides." };
+
+  const gate = await requireRole(statut === "ANNULEE" ? "MANAGER" : "STAFF");
+  if ("error" in gate) return { error: "Non autorisé." };
+
+  if (
+    ![
+      "CONFIRMEE",
+      "CHECK_IN_EFFECTUE",
+      "CHECK_OUT_EFFECTUE",
+      "ANNULEE",
+      "NO_SHOW",
+    ].includes(statut)
+  ) {
+    return { error: "Statut invalide." };
+  }
+
+  try {
+    await transitionReservationStatus(
+      id,
+      statut as
+        | "CONFIRMEE"
+        | "CHECK_IN_EFFECTUE"
+        | "CHECK_OUT_EFFECTUE"
+        | "ANNULEE"
+        | "NO_SHOW"
+    );
+  } catch (error) {
+    if (error instanceof ReservationServiceError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
+
+  await createAuditLog({
+    actorId: gate.session.user?.id ?? null,
+    action: "RESERVATION_STATUS_CHANGED",
+    entityType: "Reservation",
+    entityId: id,
+    details: { statut },
+  });
+
+  revalidatePath(`/reservations/${id}`);
+  revalidatePath("/reservations");
+  revalidatePath("/chambres");
+  revalidatePath("/factures");
   return {};
 }

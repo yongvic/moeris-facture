@@ -79,6 +79,17 @@ export async function createFacture(
         | null = null;
 
       if (parsed.data.reservationId) {
+        const existingFacture = await tx.facture.findFirst({
+          where: {
+            reservationId: parsed.data.reservationId,
+            statut: { not: "ANNULEE" },
+          },
+          select: { id: true },
+        });
+        if (existingFacture) {
+          redirect(`/factures/${existingFacture.id}`);
+        }
+
         const reservation = await tx.reservation.findUnique({
           where: { id: parsed.data.reservationId },
           select: {
@@ -312,6 +323,8 @@ export async function addConsommation(
     quantite: toNumber(formData.get("quantite")) ?? 1,
     prixUnitaire: toNumber(formData.get("prixUnitaire")) ?? 0,
     remise: toNumber(formData.get("remise")),
+    produitId: normalize(formData.get("produitId")),
+    activiteId: normalize(formData.get("activiteId")),
   };
 
   const parsed = consommationCreateSchema.safeParse(payload);
@@ -319,14 +332,45 @@ export async function addConsommation(
     return { error: zodErrorMessage(parsed.error, "Consommation invalide.") };
   }
 
+  let description = parsed.data.description;
+  let prixUnitaire = Number(parsed.data.prixUnitaire);
   const quantite = Number(parsed.data.quantite);
-  const prixUnitaire = Number(parsed.data.prixUnitaire);
+
+  if (parsed.data.categorie === "RESTAURANT" && parsed.data.produitId) {
+    const produit = await prisma.produit.findUnique({
+      where: { id: parsed.data.produitId },
+      select: { nom: true, prix: true, archive: true, disponible: true },
+    });
+    if (!produit || produit.archive || !produit.disponible) {
+      return { error: "Produit indisponible." };
+    }
+    description = produit.nom;
+    prixUnitaire = Number(produit.prix);
+  }
+
+  if (parsed.data.categorie === "ACTIVITE" && parsed.data.activiteId) {
+    const activite = await prisma.activite.findUnique({
+      where: { id: parsed.data.activiteId },
+      select: {
+        nom: true,
+        prix: true,
+        prixParUnite: true,
+        gratuit: true,
+        disponible: true,
+      },
+    });
+    if (!activite || !activite.disponible) {
+      return { error: "Activité indisponible." };
+    }
+    description = `${activite.nom} (${activite.prixParUnite})`;
+    prixUnitaire = activite.gratuit ? 0 : Number(activite.prix);
+  }
 
   try {
     await addConsommationToFacture({
       factureId: parsed.data.factureId,
       categorie: parsed.data.categorie,
-      description: parsed.data.description,
+      description,
       quantite,
       prixUnitaire,
       remise: parsed.data.remise ?? null,
@@ -349,7 +393,7 @@ export async function addConsommation(
     entityId: parsed.data.factureId,
     details: {
       categorie: parsed.data.categorie,
-      description: parsed.data.description,
+      description,
       quantite,
       prixUnitaire,
     },

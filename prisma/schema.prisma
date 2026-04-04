@@ -94,6 +94,7 @@ model Chambre {
   prixNuit    Decimal       @db.Decimal(10, 2)
   description String?
   equipements String[]
+  photoUrls   String[]
   statut      StatutChambre @default(DISPONIBLE)
   etage       Int?
   createdAt   DateTime      @default(now())
@@ -115,6 +116,7 @@ enum TypeChambre {
 
 enum StatutChambre {
   DISPONIBLE
+  RESERVEE
   OCCUPEE
   MAINTENANCE
   HORS_SERVICE

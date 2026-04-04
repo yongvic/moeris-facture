@@ -15,6 +15,7 @@ type ProduitData = {
   categorie: string;
   disponible: boolean;
   archive: boolean;
+  imageUrl?: string | null;
 };
 
 export default function ProduitEditForm({ produit }: { produit: ProduitData }) {
@@ -89,6 +90,27 @@ export default function ProduitEditForm({ produit }: { produit: ProduitData }) {
           Ajoutez les ingrédients ou allergènes importants.
         </span>
       </label>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
+          Remplacer la photo
+          <input
+            name="imageFile"
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)]"
+          />
+        </label>
+        <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
+          URL d&apos;image
+          <input
+            name="imageUrl"
+            defaultValue={produit.imageUrl ?? ""}
+            placeholder="https://... ou /uploads/produits/..."
+            className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
+          />
+        </label>
+      </div>
 
       <FormError message={state.error} />
 

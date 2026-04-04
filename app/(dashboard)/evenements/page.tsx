@@ -1,7 +1,9 @@
 import Link from "next/link";
 import StatusBadge from "../../components/StatusBadge";
+import CsvImportForm from "../../components/CsvImportForm";
 import { prisma } from "../../../lib/prisma";
 import { formatDate } from "../../../lib/format";
+import { importEvenementsCsv } from "../actions/evenements";
 
 const statusTone: Record<string, "info" | "warning" | "success" | "danger"> = {
   A_VENIR: "info",
@@ -45,7 +47,8 @@ export default async function EvenementsPage() {
         </Link>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid gap-4 lg:grid-cols-2">
         {evenements.length === 0 ? (
           <div className="rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--ink-muted)] shadow-[var(--shadow)]">
             Aucun événement planifié.
@@ -83,6 +86,13 @@ export default async function EvenementsPage() {
             </div>
           ))
         )}
+        </div>
+
+        <CsvImportForm
+          action={importEvenementsCsv}
+          title="Import événements"
+          hint="Colonnes supportées: titre, type, description, dateDebut, dateFin, capaciteMax, prixParParticipant, prixForfait, acompteRequis, statut."
+        />
       </div>
     </div>
   );

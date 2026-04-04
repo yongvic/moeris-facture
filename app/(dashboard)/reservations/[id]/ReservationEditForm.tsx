@@ -6,6 +6,7 @@ import {
   cancelReservation,
   checkInReservation,
   checkOutReservation,
+  changeReservationStatus,
 } from "../../actions/reservations";
 import FormError from "../../../components/FormError";
 import SubmitButton from "../../../components/SubmitButton";
@@ -40,6 +41,8 @@ export default function ReservationEditForm({
   const [cancelState, cancelAction] = useActionState(cancelReservation, initialState);
   const [checkInState, checkInAction] = useActionState(checkInReservation, initialState);
   const [checkOutState, checkOutAction] = useActionState(checkOutReservation, initialState);
+  const [statusState, statusAction] = useActionState(changeReservationStatus, initialState);
+  const values = state.values ?? {};
 
   return (
     <div className="grid gap-6">
@@ -50,7 +53,7 @@ export default function ReservationEditForm({
             Client
             <select
               name="clientId"
-              defaultValue={reservation.clientId}
+              defaultValue={values.clientId ?? reservation.clientId}
               className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             >
               {clients.map((client) => (
@@ -64,7 +67,7 @@ export default function ReservationEditForm({
             Chambre
             <select
               name="chambreId"
-              defaultValue={reservation.chambreId}
+              defaultValue={values.chambreId ?? reservation.chambreId}
               className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             >
               {chambres.map((chambre) => (
@@ -82,7 +85,9 @@ export default function ReservationEditForm({
             <input
               name="dateArrivee"
               type="date"
-              defaultValue={reservation.dateArrivee.toISOString().slice(0, 10)}
+              defaultValue={
+                values.dateArrivee ?? reservation.dateArrivee.toISOString().slice(0, 10)
+              }
               aria-describedby="dates-help"
               className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             />
@@ -92,7 +97,9 @@ export default function ReservationEditForm({
             <input
               name="dateDepart"
               type="date"
-              defaultValue={reservation.dateDepart.toISOString().slice(0, 10)}
+              defaultValue={
+                values.dateDepart ?? reservation.dateDepart.toISOString().slice(0, 10)
+              }
               aria-describedby="dates-help"
               className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             />
@@ -109,7 +116,7 @@ export default function ReservationEditForm({
               name="nombreAdultes"
               type="number"
               min={1}
-              defaultValue={reservation.nombreAdultes}
+              defaultValue={values.nombreAdultes ?? reservation.nombreAdultes}
               inputMode="numeric"
               className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             />
@@ -120,7 +127,7 @@ export default function ReservationEditForm({
               name="nombreEnfants"
               type="number"
               min={0}
-              defaultValue={reservation.nombreEnfants}
+              defaultValue={values.nombreEnfants ?? reservation.nombreEnfants}
               inputMode="numeric"
               className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             />
@@ -131,7 +138,7 @@ export default function ReservationEditForm({
               name="prixNegocie"
               type="number"
               step="0.01"
-              defaultValue={reservation.prixNegocie ?? ""}
+              defaultValue={values.prixNegocie ?? reservation.prixNegocie ?? ""}
               min={0}
               inputMode="decimal"
               placeholder="Optionnel"
@@ -154,7 +161,7 @@ export default function ReservationEditForm({
           <textarea
             name="notes"
             rows={3}
-            defaultValue={reservation.notes ?? ""}
+            defaultValue={values.notes ?? reservation.notes ?? ""}
             aria-describedby="notes-help"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
@@ -170,6 +177,33 @@ export default function ReservationEditForm({
           loadingLabel="Mise à jour..."
           className="rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-white"
         />
+      </form>
+
+      <form action={statusAction} className="grid gap-3 rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-5">
+        <input type="hidden" name="id" value={reservation.id} />
+        <p className="text-sm font-semibold text-[color:var(--ink)]">Modifier le statut</p>
+        <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+          <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
+            Nouveau statut
+            <select
+              name="statut"
+              defaultValue={reservation.statut}
+              className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)]"
+            >
+              <option value="CONFIRMEE">CONFIRMEE</option>
+              <option value="CHECK_IN_EFFECTUE">CHECK_IN_EFFECTUE</option>
+              <option value="CHECK_OUT_EFFECTUE">CHECK_OUT_EFFECTUE</option>
+              <option value="NO_SHOW">NO_SHOW</option>
+              <option value="ANNULEE">ANNULEE</option>
+            </select>
+          </label>
+          <SubmitButton
+            label="Appliquer le statut"
+            loadingLabel="Application..."
+            className="rounded-full border border-[color:var(--stroke)] px-5 py-3 text-sm font-semibold text-[color:var(--ink)]"
+          />
+        </div>
+        <FormError message={statusState.error} />
       </form>
 
       <div className="grid gap-3 rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-5">

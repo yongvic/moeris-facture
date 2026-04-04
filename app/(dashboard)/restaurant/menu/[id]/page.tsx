@@ -1,5 +1,7 @@
+import Image from "next/image";
 import { prisma } from "../../../../../lib/prisma";
 import ProduitEditForm from "./ProduitEditForm";
+import { formatXof } from "../../../../../lib/format";
 
 export default async function ProduitDetailPage({
   params,
@@ -34,8 +36,19 @@ export default async function ProduitDetailPage({
           {produit.nom}
         </h2>
         <p className="mt-2 text-sm text-[color:var(--ink-muted)]">
-          {produit.categorie}
+          {produit.categorie} • {formatXof(Number(produit.prix))}
         </p>
+        {produit.imageUrl ? (
+          <div className="mt-5 overflow-hidden rounded-3xl border border-[color:var(--stroke)]">
+            <Image
+              src={produit.imageUrl}
+              alt={produit.nom}
+              width={1200}
+              height={720}
+              className="h-64 w-full object-cover"
+            />
+          </div>
+        ) : null}
       </div>
 
       <div className="rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow)]">

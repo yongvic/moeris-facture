@@ -13,6 +13,16 @@ export function parseBoolean(value: unknown, fallback = false) {
 }
 
 function parseCsvText(text: string) {
+  const firstLine = text.split("\n")[0] ?? "";
+  const commaCount = (firstLine.match(/,/g) ?? []).length;
+  const semicolonCount = (firstLine.match(/;/g) ?? []).length;
+  const tabCount = (firstLine.match(/\t/g) ?? []).length;
+  const separator =
+    tabCount > commaCount && tabCount > semicolonCount
+      ? "\t"
+      : semicolonCount > commaCount
+        ? ";"
+        : ",";
   const rows: string[][] = [];
   let current = "";
   let row: string[] = [];
@@ -32,7 +42,7 @@ function parseCsvText(text: string) {
       continue;
     }
 
-    if (char === "," && !inQuotes) {
+    if (char === separator && !inQuotes) {
       row.push(current);
       current = "";
       continue;
@@ -63,7 +73,7 @@ export async function parseCsvFile(file: File) {
   if (lines.length === 0) return [];
 
   const [headerRow, ...dataRows] = lines;
-  const headers = headerRow.map((header) => header.trim());
+  const headers = headerRow.map((header) => header.trim().replace(/^\uFEFF/, ""));
   return dataRows.map((row) =>
     headers.reduce<Record<string, string>>((acc, header, index) => {
       acc[header] = (row[index] ?? "").trim();

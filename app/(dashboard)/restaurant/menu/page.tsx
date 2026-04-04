@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import CsvImportForm from "../../../components/CsvImportForm";
 import { prisma } from "../../../../lib/prisma";
@@ -165,12 +166,25 @@ export default async function MenuPage({
                     className="border-t border-[color:var(--stroke)]"
                   >
                     <td className="px-4 py-3 font-semibold text-[color:var(--ink)]">
-                      <Link
-                        href={`/restaurant/menu/${produit.id}`}
-                        className="hover:underline"
-                      >
-                        {produit.nom}
-                      </Link>
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 overflow-hidden rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)]">
+                          {produit.imageUrl ? (
+                            <Image
+                              src={produit.imageUrl}
+                              alt={produit.nom}
+                              width={96}
+                              height={96}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : null}
+                        </div>
+                        <Link
+                          href={`/restaurant/menu/${produit.id}`}
+                          className="hover:underline"
+                        >
+                          {produit.nom}
+                        </Link>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-[color:var(--ink-muted)]">
                       {produit.categorie}

@@ -1,6 +1,8 @@
 import Link from "next/link";
+import CsvImportForm from "../../components/CsvImportForm";
 import { prisma } from "../../../lib/prisma";
 import { formatXof } from "../../../lib/format";
+import { importActivitesCsv } from "../actions/activites";
 
 export default async function ActivitesPage() {
   const activites = await prisma.activite.findMany({
@@ -30,7 +32,8 @@ export default async function ActivitesPage() {
         </Link>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid gap-4 lg:grid-cols-2">
         {activites.length === 0 ? (
           <div className="rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--ink-muted)] shadow-[var(--shadow)]">
             Aucune activité configurée.
@@ -84,6 +87,13 @@ export default async function ActivitesPage() {
             )
           )
         )}
+        </div>
+
+        <CsvImportForm
+          action={importActivitesCsv}
+          title="Import activités"
+          hint="Colonnes supportées: nom, description, prix, prixParUnite, gratuit, capaciteMax, disponible."
+        />
       </div>
     </div>
   );

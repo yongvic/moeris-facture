@@ -10,7 +10,10 @@ export default async function NouvelleFacturePage() {
       take: 50,
     }),
     prisma.reservation.findMany({
-      where: { statut: { in: ["CONFIRMEE", "CHECK_IN_EFFECTUE"] } },
+      where: {
+        statut: { in: ["CONFIRMEE", "CHECK_IN_EFFECTUE"] },
+        factures: { none: { statut: { not: "ANNULEE" } } },
+      },
       orderBy: { createdAt: "desc" },
       take: 50,
       include: { client: true, chambre: true },

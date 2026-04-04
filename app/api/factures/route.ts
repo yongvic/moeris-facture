@@ -76,6 +76,17 @@ export async function POST(request: Request) {
       | null = null;
 
     if (parsed.data.reservationId) {
+      const existingFacture = await tx.facture.findFirst({
+        where: {
+          reservationId: parsed.data.reservationId,
+          statut: { not: "ANNULEE" },
+        },
+        select: { id: true },
+      });
+      if (existingFacture) {
+        throw new Error("Une facture active existe déjà pour cette réservation.");
+      }
+
       const reservation = await tx.reservation.findUnique({
         where: { id: parsed.data.reservationId },
         select: {

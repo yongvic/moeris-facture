@@ -16,6 +16,7 @@ type ChambreData = {
   prixNuit: number;
   description?: string | null;
   equipements: string[];
+  photoUrls: string[];
   statut: string;
   etage?: number | null;
 };
@@ -96,6 +97,7 @@ export default function ChambreEditForm({ chambre }: { chambre: ChambreData }) {
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           >
             <option value="DISPONIBLE">DISPONIBLE</option>
+            <option value="RESERVEE">RESERVEE</option>
             <option value="OCCUPEE">OCCUPEE</option>
             <option value="MAINTENANCE">MAINTENANCE</option>
             <option value="HORS_SERVICE">HORS_SERVICE</option>
@@ -133,6 +135,37 @@ export default function ChambreEditForm({ chambre }: { chambre: ChambreData }) {
           rows={3}
           defaultValue={chambre.description ?? ""}
           className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
+        />
+      </label>
+
+      {chambre.photoUrls.length > 0 ? (
+        <div className="grid gap-3">
+          <p className="text-sm font-semibold text-[color:var(--ink)]">Photos actuelles</p>
+          <div className="grid gap-3 md:grid-cols-2">
+            {chambre.photoUrls.map((photoUrl) => (
+              <label
+                key={photoUrl}
+                className="flex items-center gap-3 rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] p-3 text-sm text-[color:var(--ink-muted)]"
+              >
+                <input type="checkbox" name="existingPhotoUrls" value={photoUrl} defaultChecked />
+                <span className="truncate">{photoUrl}</span>
+              </label>
+            ))}
+          </div>
+          <p className="text-xs text-[color:var(--ink-muted)]">
+            Décoche une photo pour la retirer de la chambre lors de la mise à jour.
+          </p>
+        </div>
+      ) : null}
+
+      <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
+        Ajouter de nouvelles photos
+        <input
+          name="photos"
+          type="file"
+          multiple
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)]"
         />
       </label>
 

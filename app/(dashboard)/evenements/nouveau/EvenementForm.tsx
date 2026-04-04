@@ -9,6 +9,7 @@ const initialState = { error: "" };
 
 export default function EvenementForm() {
   const [state, formAction] = useActionState(createEvenement, initialState);
+  const values = state.values ?? {};
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -18,6 +19,7 @@ export default function EvenementForm() {
           <input
             name="titre"
             required
+            defaultValue={values.titre ?? ""}
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             placeholder="Ex. Soirée Jazz"
           />
@@ -26,7 +28,7 @@ export default function EvenementForm() {
           Type
           <select
             name="type"
-            defaultValue="SOIREE"
+            defaultValue={values.type ?? "SOIREE"}
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           >
             <option value="SOIREE">SOIREE</option>
@@ -46,6 +48,7 @@ export default function EvenementForm() {
             name="dateDebut"
             type="datetime-local"
             required
+            defaultValue={values.dateDebut ?? ""}
             aria-describedby="dates-help"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
@@ -56,6 +59,7 @@ export default function EvenementForm() {
             name="dateFin"
             type="datetime-local"
             required
+            defaultValue={values.dateFin ?? ""}
             aria-describedby="dates-help"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
@@ -72,6 +76,7 @@ export default function EvenementForm() {
             name="capaciteMax"
             type="number"
             min={1}
+            defaultValue={values.capaciteMax ?? ""}
             inputMode="numeric"
             placeholder="Optionnel"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
@@ -84,6 +89,7 @@ export default function EvenementForm() {
             type="number"
             step="0.01"
             min={0}
+            defaultValue={values.prixParParticipant ?? ""}
             inputMode="decimal"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
@@ -95,6 +101,7 @@ export default function EvenementForm() {
             type="number"
             step="0.01"
             min={0}
+            defaultValue={values.prixForfait ?? ""}
             inputMode="decimal"
             placeholder="Optionnel"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
@@ -107,6 +114,7 @@ export default function EvenementForm() {
             type="number"
             step="0.01"
             min={0}
+            defaultValue={values.acompteRequis ?? ""}
             inputMode="decimal"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
@@ -118,6 +126,7 @@ export default function EvenementForm() {
         <textarea
           name="description"
           rows={3}
+          defaultValue={values.description ?? ""}
           aria-describedby="description-help"
           className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
         />

@@ -32,6 +32,20 @@ export default async function FactureDetailPage({
     where: { id },
     include: {
       client: true,
+      reservation: {
+        include: {
+          chambre: {
+            select: {
+              numero: true,
+              nom: true,
+              prixNuit: true,
+            },
+          },
+        },
+      },
+      evenement: {
+        select: { titre: true },
+      },
       consommations: { where: { supprimee: false }, orderBy: { createdAt: "desc" } },
       paiements: { orderBy: { createdAt: "desc" } },
     },
@@ -49,6 +63,18 @@ export default async function FactureDetailPage({
   const remisePourcent = facture.remisePourcent ? Number(facture.remisePourcent) : 0;
   const paid = Number(facture.montantPaye);
   const remaining = Math.max(0, total - paid);
+  const [produits, activites] = await Promise.all([
+    prisma.produit.findMany({
+      where: { archive: false, disponible: true },
+      orderBy: { nom: "asc" },
+      select: { id: true, nom: true, prix: true, categorie: true },
+    }),
+    prisma.activite.findMany({
+      where: { disponible: true },
+      orderBy: { nom: "asc" },
+      select: { id: true, nom: true, prix: true, prixParUnite: true, gratuit: true },
+    }),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -115,7 +141,32 @@ export default async function FactureDetailPage({
             <h3 className="font-display text-xl text-[color:var(--ink)]">
               Ajouter une consommation
             </h3>
-            <ConsommationForm factureId={facture.id} />
+            <ConsommationForm
+              factureId={facture.id}
+              produits={produits.map((produit) => ({
+                id: produit.id,
+                nom: produit.nom,
+                prix: Number(produit.prix),
+                categorie: produit.categorie,
+              }))}
+              activites={activites.map((activite) => ({
+                id: activite.id,
+                nom: activite.nom,
+                prix: Number(activite.prix),
+                prixParUnite: activite.prixParUnite,
+                gratuit: activite.gratuit,
+              }))}
+              reservation={
+                facture.reservation
+                  ? {
+                      chambre: facture.reservation.chambre.nom ?? facture.reservation.chambre.numero,
+                      prixNuit: Number(facture.reservation.chambre.prixNuit),
+                      nombreNuits: facture.reservation.nombreNuits,
+                    }
+                  : null
+              }
+              evenementTitre={facture.evenement?.titre ?? null}
+            />
           </div>
         </div>
 

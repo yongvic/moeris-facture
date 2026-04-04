@@ -9,6 +9,7 @@ export default async function NouvelleReservationPage() {
       take: 50,
     }),
     prisma.chambre.findMany({
+      where: { statut: { notIn: ["MAINTENANCE", "HORS_SERVICE"] } },
       orderBy: { numero: "asc" },
       take: 50,
     }),
@@ -21,7 +22,7 @@ export default async function NouvelleReservationPage() {
 
   const roomOptions = chambres.map((chambre) => ({
     id: chambre.id,
-    label: chambre.nom ?? chambre.numero,
+    label: `${chambre.nom ?? chambre.numero} • ${chambre.statut}`,
   }));
 
   return (
@@ -34,7 +35,7 @@ export default async function NouvelleReservationPage() {
           Nouvelle réservation
         </h2>
         <p className="mt-2 text-sm text-[color:var(--ink-muted)]">
-          Associez un client et une chambre.
+          Associez un client et une chambre. La facture de séjour sera créée et synchronisée automatiquement.
         </p>
       </div>
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "../../../../lib/prisma";
 import ReservationEditForm from "./ReservationEditForm";
 
@@ -9,7 +10,7 @@ export default async function ReservationDetailPage({
   const { id } = await params;
   const reservation = await prisma.reservation.findUnique({
     where: { id },
-    include: { client: true, chambre: true },
+    include: { client: true, chambre: true, factures: { orderBy: { createdAt: "desc" } } },
   });
 
   if (!reservation) {
@@ -36,7 +37,7 @@ export default async function ReservationDetailPage({
 
   const roomOptions = chambres.map((chambre) => ({
     id: chambre.id,
-    label: chambre.nom ?? chambre.numero,
+    label: `${chambre.nom ?? chambre.numero} • ${chambre.statut}`,
   }));
 
   const reservationData = {
@@ -60,6 +61,14 @@ export default async function ReservationDetailPage({
           {new Date(reservation.dateArrivee).toLocaleDateString("fr-FR")} →{" "}
           {new Date(reservation.dateDepart).toLocaleDateString("fr-FR")}
         </p>
+        {reservation.factures[0] ? (
+          <p className="mt-2 text-sm text-[color:var(--ink-muted)]">
+            Facture liée:{" "}
+            <Link href={`/factures/${reservation.factures[0].id}`} className="font-semibold text-[color:var(--accent)]">
+              {reservation.factures[0].numero}
+            </Link>
+          </p>
+        ) : null}
       </div>
 
       <div className="rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow)]">

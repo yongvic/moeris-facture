@@ -109,7 +109,7 @@ export default async function DashboardPage() {
     },
   ];
 
-  const roomStatus = ["DISPONIBLE", "OCCUPEE", "MAINTENANCE", "HORS_SERVICE"].map(
+  const roomStatus = ["DISPONIBLE", "RESERVEE", "OCCUPEE", "MAINTENANCE", "HORS_SERVICE"].map(
     (statut) => {
       const entry = chambresByStatut.find((item) => item.statut === statut);
       const count = entry?._count._all ?? 0;
@@ -117,6 +117,8 @@ export default async function DashboardPage() {
         label:
           statut === "DISPONIBLE"
             ? "Disponibles"
+            : statut === "RESERVEE"
+            ? "Réservées"
             : statut === "OCCUPEE"
             ? "Occupées"
             : statut === "MAINTENANCE"
@@ -126,6 +128,8 @@ export default async function DashboardPage() {
         tone:
           statut === "DISPONIBLE"
             ? "success"
+            : statut === "RESERVEE"
+            ? "neutral"
             : statut === "OCCUPEE"
             ? "info"
             : statut === "MAINTENANCE"
@@ -267,7 +271,7 @@ export default async function DashboardPage() {
                 <p className="text-sm font-semibold text-[color:var(--ink)]">
                   {room.label}
                 </p>
-                <StatusBadge tone={room.tone as "success" | "warning" | "danger" | "info"}>
+                <StatusBadge tone={room.tone as "success" | "warning" | "danger" | "info" | "neutral"}>
                   {room.value}
                 </StatusBadge>
               </div>

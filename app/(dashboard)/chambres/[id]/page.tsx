@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "../../../../lib/prisma";
 import { formatXof } from "../../../../lib/format";
@@ -60,6 +61,24 @@ export default async function ChambreDetailPage({
           <h3 className="font-display text-xl text-[color:var(--ink)]">
             Informations chambre
           </h3>
+          {chambre.photoUrls.length > 0 ? (
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {chambre.photoUrls.map((photoUrl) => (
+                <div
+                  key={photoUrl}
+                  className="overflow-hidden rounded-3xl border border-[color:var(--stroke)]"
+                >
+                  <Image
+                    src={photoUrl}
+                    alt={chambre.nom ?? chambre.numero}
+                    width={1200}
+                    height={800}
+                    className="h-48 w-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : null}
           <div className="mt-4">
             <ChambreEditForm chambre={chambreData} />
           </div>

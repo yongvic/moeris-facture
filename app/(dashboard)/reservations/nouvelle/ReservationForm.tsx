@@ -18,6 +18,7 @@ export default function ReservationForm({
 }) {
   const [state, formAction] = useActionState(createReservation, initialState);
   const disabled = clients.length === 0 || chambres.length === 0;
+  const values = state.values ?? {};
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -28,6 +29,7 @@ export default function ReservationForm({
             name="clientId"
             required
             disabled={disabled}
+            defaultValue={values.clientId ?? ""}
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           >
             <option value="">Sélectionner</option>
@@ -44,6 +46,7 @@ export default function ReservationForm({
             name="chambreId"
             required
             disabled={disabled}
+            defaultValue={values.chambreId ?? ""}
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           >
             <option value="">Sélectionner</option>
@@ -63,6 +66,7 @@ export default function ReservationForm({
             name="dateArrivee"
             type="date"
             required
+            defaultValue={values.dateArrivee ?? ""}
             aria-describedby="dates-help"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
@@ -73,6 +77,7 @@ export default function ReservationForm({
             name="dateDepart"
             type="date"
             required
+            defaultValue={values.dateDepart ?? ""}
             aria-describedby="dates-help"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
@@ -89,7 +94,7 @@ export default function ReservationForm({
             name="nombreAdultes"
             type="number"
             min={1}
-            defaultValue={1}
+            defaultValue={values.nombreAdultes ?? 1}
             inputMode="numeric"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
@@ -100,7 +105,7 @@ export default function ReservationForm({
             name="nombreEnfants"
             type="number"
             min={0}
-            defaultValue={0}
+            defaultValue={values.nombreEnfants ?? 0}
             inputMode="numeric"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
           />
@@ -112,6 +117,7 @@ export default function ReservationForm({
             type="number"
             step="0.01"
             min={0}
+            defaultValue={values.prixNegocie ?? ""}
             inputMode="decimal"
             placeholder="Optionnel"
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
@@ -124,6 +130,7 @@ export default function ReservationForm({
         <textarea
           name="notes"
           rows={3}
+          defaultValue={values.notes ?? ""}
           aria-describedby="notes-help"
           className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
         />

@@ -8,6 +8,7 @@ import { produitCreateSchema, produitUpdateSchema } from "../../../lib/validator
 import { zodErrorMessage } from "../../../lib/validation";
 import { parseBoolean, parseCsvFile, parseNullableString } from "../../../lib/csv";
 import { createAuditLog } from "../../../lib/audit";
+import { uploadOptionalImage } from "../../../lib/uploads";
 
 type FormState = { error?: string; message?: string };
 
@@ -39,6 +40,11 @@ export async function createProduit(
     archive: false,
     imageUrl: normalize(formData.get("imageUrl")),
   };
+
+  const uploadedImage = await uploadOptionalImage(formData.get("imageFile"), "produits");
+  if (uploadedImage) {
+    payload.imageUrl = uploadedImage;
+  }
 
   const parsed = produitCreateSchema.safeParse(payload);
   if (!parsed.success) {
@@ -78,6 +84,11 @@ export async function updateProduit(
     archive: formData.get("archive") === "on",
     imageUrl: normalize(formData.get("imageUrl")),
   };
+
+  const uploadedImage = await uploadOptionalImage(formData.get("imageFile"), "produits");
+  if (uploadedImage) {
+    payload.imageUrl = uploadedImage;
+  }
 
   const parsed = produitUpdateSchema.safeParse(payload);
   if (!parsed.success) {
