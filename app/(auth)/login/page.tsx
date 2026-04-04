@@ -4,6 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 
+const registrationEnabled =
+  process.env.NEXT_PUBLIC_ALLOW_PUBLIC_REGISTRATION === "true";
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -89,12 +92,16 @@ export default function LoginPage() {
         >
           Mot de passe oublié ?
         </Link>
-        <Link
-          href="/register"
-          className="font-semibold text-[color:var(--accent-strong)] hover:text-[color:var(--accent)]"
-        >
-          Créer un compte
-        </Link>
+        {registrationEnabled ? (
+          <Link
+            href="/register"
+            className="font-semibold text-[color:var(--accent-strong)] hover:text-[color:var(--accent)]"
+          >
+            Créer un compte
+          </Link>
+        ) : (
+          <span className="text-xs">Création de compte via admin</span>
+        )}
       </div>
     </div>
   );

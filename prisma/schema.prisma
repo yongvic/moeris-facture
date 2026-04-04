@@ -23,6 +23,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   passwordResetTokens PasswordResetToken[]
+  auditLogs           AuditLog[]
 
   @@map("users")
 }
@@ -167,6 +168,9 @@ model Facture {
   reservationId  String?
   evenementId    String?
   statut         StatutFacture  @default(OUVERTE)
+  tauxTva        Decimal        @db.Decimal(5, 2) @default(18)
+  montantHt      Decimal        @db.Decimal(10, 2) @default(0)
+  montantTva     Decimal        @db.Decimal(10, 2) @default(0)
   montantTotal   Decimal        @db.Decimal(10, 2) @default(0)
   montantPaye    Decimal        @db.Decimal(10, 2) @default(0)
   remiseGlobale  Decimal?       @db.Decimal(10, 2)
@@ -179,6 +183,8 @@ model Facture {
   client         Client         @relation(fields: [clientId], references: [id])
   reservation    Reservation?   @relation(fields: [reservationId], references: [id])
   evenement      Evenement?     @relation(fields: [evenementId], references: [id])
+  participantId  String?
+  participant    ParticipantEvenement? @relation(fields: [participantId], references: [id])
   consommations  Consommation[]
   paiements      Paiement[]
 
@@ -350,6 +356,7 @@ model ParticipantEvenement {
   createdAt    DateTime          @default(now())
 
   evenement    Evenement         @relation(fields: [evenementId], references: [id])
+  factures     Facture[]
 
   @@map("participants_evenement")
 }
@@ -359,4 +366,21 @@ enum StatutParticipant {
   PRESENT
   ABSENT
   ANNULE
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

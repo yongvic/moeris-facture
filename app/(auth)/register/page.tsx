@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 
+const registrationEnabled =
+  process.env.NEXT_PUBLIC_ALLOW_PUBLIC_REGISTRATION === "true";
+
 export default function RegisterPage() {
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
@@ -51,6 +54,13 @@ export default function RegisterPage() {
         Renseignez les informations de l&apos;utilisateur à créer.
       </p>
 
+      {!registrationEnabled ? (
+        <div className="mt-6 rounded-2xl border border-[color:var(--warning)]/40 bg-[color:rgba(217,119,6,0.08)] px-4 py-4 text-sm text-[color:var(--warning)]">
+          L&apos;inscription publique est désactivée. Utilisez un compte
+          administrateur dans <span className="font-semibold">Paramètres</span>{" "}
+          pour créer de nouveaux accès.
+        </div>
+      ) : (
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
           Prénom
@@ -99,6 +109,9 @@ export default function RegisterPage() {
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             placeholder="••••••••"
           />
+          <span className="text-xs text-[color:var(--ink-muted)]">
+            8 caractères minimum avec majuscule, minuscule, chiffre et symbole.
+          </span>
         </label>
         <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
           Confirmer le mot de passe
@@ -138,6 +151,7 @@ export default function RegisterPage() {
           {loading ? "Création..." : "Créer le compte"}
         </button>
       </form>
+      )}
 
       <div className="mt-6 flex items-center justify-between text-sm text-[color:var(--ink-muted)]">
         <span>Déjà un compte ?</span>

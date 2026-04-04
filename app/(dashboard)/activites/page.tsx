@@ -74,9 +74,12 @@ export default async function ActivitesPage() {
                   {activite.capaciteMax ?? "—"} pers.
                 </span>
               </div>
-              <button className="mt-5 w-full rounded-full border border-[color:var(--stroke)] px-4 py-2 text-sm font-semibold text-[color:var(--ink)]">
-                Ajouter à une facture
-              </button>
+              <Link
+                href={`/activites/${activite.id}`}
+                className="mt-5 block w-full rounded-full border border-[color:var(--stroke)] px-4 py-2 text-center text-sm font-semibold text-[color:var(--ink)]"
+              >
+                Ouvrir la fiche
+              </Link>
             </div>
             )
           )

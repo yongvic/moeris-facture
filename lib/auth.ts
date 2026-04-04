@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 import { rateLimit } from "./rate-limit";
+import { createAuditLog } from "./audit";
 
 function getHeader(
   headers:
@@ -45,56 +46,47 @@ export const authOptions: NextAuthOptions = {
           ?.trim();
         const realIp = getHeader(req?.headers, "x-real-ip");
         const ip = forwarded ?? realIp ?? "unknown";
-        const email = credentials?.email ?? "unknown";
 
-        console.log("[AUTH_DEBUG] Tentative de connexion pour:", email, "IP:", ip);
+        const email = credentials?.email?.trim().toLowerCase();
+        const password = credentials?.password;
 
-        if (!credentials?.email || !credentials.password) {
-          console.log(
-            "[AUTH_DEBUG] Email ou mot de passe manquant dans les credentials.",
-            "IP:",
-            ip
-          );
+        if (!email || !password) {
           return null;
         }
 
-        const key = `login:${ip}:${credentials.email}`;
+        const key = `login:${ip}:${email}`;
         const limit = rateLimit(key, { max: 10, windowMs: 10 * 60 * 1000 });
-        
+
         if (!limit.allowed) {
-          console.log(
-            "[AUTH_DEBUG] Rate limit atteint pour cette IP/Email.",
-            "IP:",
-            ip
-          );
           return null;
         }
-        
+
         try {
           const user = await prisma.user.findUnique({
-            where: { email: credentials.email },
+            where: { email },
           });
-          
+
           if (!user) {
-            console.log("[AUTH_DEBUG] Utilisateur introuvable en base de données.");
             return null;
           }
-          
-          console.log("[AUTH_DEBUG] Utilisateur trouvé:", user.email, "Actif:", user.actif);
-          
+
           if (!user.actif) {
-            console.log("[AUTH_DEBUG] Compte utilisateur inactif.");
             return null;
           }
-          
-          const valid = await bcrypt.compare(credentials.password, user.password);
-          
+
+          const valid = await bcrypt.compare(password, user.password);
+
           if (!valid) {
-            console.log("[AUTH_DEBUG] Mot de passe incorrect.");
             return null;
           }
-          
-          console.log("[AUTH_DEBUG] Connexion réussie pour:", user.email);
+          await createAuditLog({
+            actorId: user.id,
+            action: "AUTH_LOGIN_SUCCESS",
+            entityType: "User",
+            entityId: user.id,
+            details: { ip },
+          });
+
           return {
             id: user.id,
             email: user.email,
@@ -102,7 +94,7 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
           };
         } catch (error) {
-          console.error("[AUTH_DEBUG] Erreur critique lors de l'auth:", error);
+          console.error("[AUTH_ERROR]", error);
           return null;
         }
       },
@@ -111,12 +103,14 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        token.sub = user.id;
         token.role = (user as { role?: string }).role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
+        session.user.id = token.sub;
         session.user.role = token.role as string | undefined;
       }
       return session;

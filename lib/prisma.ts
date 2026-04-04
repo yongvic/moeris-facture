@@ -7,10 +7,25 @@ const globalForPrisma = globalThis as unknown as {
   pgPool: Pool | undefined;
 };
 
+function normalizeConnectionString(connectionString: string | undefined) {
+  if (!connectionString) return connectionString;
+
+  const normalized = new URL(connectionString);
+  const sslmode = normalized.searchParams.get("sslmode");
+
+  if (!sslmode || ["prefer", "require", "verify-ca"].includes(sslmode)) {
+    normalized.searchParams.set("sslmode", "verify-full");
+  }
+
+  return normalized.toString();
+}
+
+const connectionString = normalizeConnectionString(process.env.DATABASE_URL);
+
 const pool =
   globalForPrisma.pgPool ??
   new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString,
   });
 
 if (process.env.NODE_ENV !== "production") {

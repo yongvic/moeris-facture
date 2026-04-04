@@ -7,7 +7,15 @@ import SubmitButton from "../../../components/SubmitButton";
 
 const initialState = { error: "" };
 
-export default function ParticipantForm({ evenementId }: { evenementId: string }) {
+type ClientOption = { id: string; label: string };
+
+export default function ParticipantForm({
+  evenementId,
+  clients,
+}: {
+  evenementId: string;
+  clients: ClientOption[];
+}) {
   const [state, formAction] = useActionState(addParticipant, initialState);
 
   return (
@@ -36,6 +44,31 @@ export default function ParticipantForm({ evenementId }: { evenementId: string }
           className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-sm text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
         />
       </div>
+      <select
+        name="clientId"
+        aria-label="Client CRM"
+        className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-sm text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
+        defaultValue=""
+      >
+        <option value="">Créer ou retrouver automatiquement le client</option>
+        {clients.map((client) => (
+          <option key={client.id} value={client.id}>
+            {client.label}
+          </option>
+        ))}
+      </select>
+      <input
+        name="acomptePaye"
+        type="number"
+        min={0}
+        step="0.01"
+        placeholder="Acompte versé (optionnel)"
+        aria-label="Acompte payé"
+        className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-sm text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
+      />
+      <p className="text-xs text-[color:var(--ink-muted)]">
+        Pour un événement au forfait, sélectionne le client payeur pour réutiliser la même facture au lieu de créer des doublons.
+      </p>
 
       <FormError message={state.error} />
 

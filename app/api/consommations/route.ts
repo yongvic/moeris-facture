@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
 import { requireRole } from "../../../lib/auth-helpers";
 import { consommationCreateSchema } from "../../../lib/validators/consommation";
-import { recalcFacture } from "../../../lib/billing";
+import {
+  addConsommationToFacture,
+  FactureServiceError,
+} from "../../../lib/services/factures";
 
 export async function POST(request: Request) {
   const gate = await requireRole("STAFF");
@@ -17,26 +19,23 @@ export async function POST(request: Request) {
     );
   }
 
-  const quantite = Number(parsed.data.quantite);
-  const prixUnitaire = Number(parsed.data.prixUnitaire);
-  const remise = parsed.data.remise ? Number(parsed.data.remise) : 0;
-  const sousTotal = Math.max(0, quantite * prixUnitaire - remise);
-
-  const consommation = await prisma.consommation.create({
-    data: {
+  try {
+    const consommation = await addConsommationToFacture({
       factureId: parsed.data.factureId,
       categorie: parsed.data.categorie,
       description: parsed.data.description,
-      quantite,
-      prixUnitaire,
+      quantite: Number(parsed.data.quantite),
+      prixUnitaire: Number(parsed.data.prixUnitaire),
       remise: parsed.data.remise ?? null,
-      sousTotal,
       produitId: parsed.data.produitId ?? null,
       activiteId: parsed.data.activiteId ?? null,
-    },
-  });
+    });
 
-  await recalcFacture(parsed.data.factureId);
-
-  return NextResponse.json({ data: consommation }, { status: 201 });
+    return NextResponse.json({ data: consommation }, { status: 201 });
+  } catch (error) {
+    if (error instanceof FactureServiceError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    throw error;
+  }
 }

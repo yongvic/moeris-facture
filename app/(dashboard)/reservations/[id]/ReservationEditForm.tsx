@@ -1,7 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
-import { updateReservation, cancelReservation } from "../../actions/reservations";
+import {
+  updateReservation,
+  cancelReservation,
+  checkInReservation,
+  checkOutReservation,
+} from "../../actions/reservations";
 import FormError from "../../../components/FormError";
 import SubmitButton from "../../../components/SubmitButton";
 
@@ -33,6 +38,8 @@ export default function ReservationEditForm({
 }) {
   const [state, formAction] = useActionState(updateReservation, initialState);
   const [cancelState, cancelAction] = useActionState(cancelReservation, initialState);
+  const [checkInState, checkInAction] = useActionState(checkInReservation, initialState);
+  const [checkOutState, checkOutAction] = useActionState(checkOutReservation, initialState);
 
   return (
     <div className="grid gap-6">
@@ -133,20 +140,14 @@ export default function ReservationEditForm({
           </label>
         </div>
 
-        <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
-          Statut
-          <select
-            name="statut"
-            defaultValue={reservation.statut}
-            className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
-          >
-            <option value="CONFIRMEE">CONFIRMEE</option>
-            <option value="CHECK_IN_EFFECTUE">CHECK_IN_EFFECTUE</option>
-            <option value="CHECK_OUT_EFFECTUE">CHECK_OUT_EFFECTUE</option>
-            <option value="ANNULEE">ANNULEE</option>
-            <option value="NO_SHOW">NO_SHOW</option>
-          </select>
-        </label>
+        <div className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3">
+          <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+            Statut actuel
+          </p>
+          <p className="mt-1 text-sm font-semibold text-[color:var(--ink)]">
+            {reservation.statut}
+          </p>
+        </div>
 
         <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
           Notes
@@ -170,6 +171,32 @@ export default function ReservationEditForm({
           className="rounded-full bg-[color:var(--accent)] px-5 py-3 text-sm font-semibold text-white"
         />
       </form>
+
+      <div className="grid gap-3 rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-5">
+        <p className="text-sm font-semibold text-[color:var(--ink)]">Workflow séjour</p>
+        <p className="text-sm text-[color:var(--ink-muted)]">
+          Utilise ces actions métier pour aligner le statut de la réservation et celui de la chambre.
+        </p>
+        <div className="flex flex-col gap-3 md:flex-row">
+          <form action={checkInAction} className="flex-1">
+            <input type="hidden" name="id" value={reservation.id} />
+            <SubmitButton
+              label="Enregistrer le check-in"
+              loadingLabel="Check-in..."
+              className="w-full rounded-full border border-[color:var(--accent)]/40 px-5 py-3 text-sm font-semibold text-[color:var(--accent)]"
+            />
+          </form>
+          <form action={checkOutAction} className="flex-1">
+            <input type="hidden" name="id" value={reservation.id} />
+            <SubmitButton
+              label="Enregistrer le check-out"
+              loadingLabel="Check-out..."
+              className="w-full rounded-full border border-emerald-500/40 px-5 py-3 text-sm font-semibold text-emerald-600"
+            />
+          </form>
+        </div>
+        <FormError message={checkInState.error || checkOutState.error} />
+      </div>
 
       <form action={cancelAction} className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
         <input type="hidden" name="id" value={reservation.id} />

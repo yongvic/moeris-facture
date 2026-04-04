@@ -16,10 +16,42 @@ export default async function EvenementDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const evenement = await prisma.evenement.findUnique({
-    where: { id },
-    include: { participants: true },
-  });
+  const [evenement, clients] = await Promise.all([
+    prisma.evenement.findUnique({
+      where: { id },
+      include: {
+        participants: {
+          include: {
+            factures: {
+              select: {
+                id: true,
+                numero: true,
+                montantTotal: true,
+                montantPaye: true,
+                statut: true,
+              },
+            },
+          },
+        },
+        factures: {
+          where: { participantId: null },
+          select: {
+            id: true,
+            numero: true,
+            montantTotal: true,
+            montantPaye: true,
+            statut: true,
+            client: { select: { prenom: true, nom: true } },
+          },
+        },
+      },
+    }),
+    prisma.client.findMany({
+      where: { actif: true },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+  ]);
 
   if (!evenement) {
     return (
@@ -37,6 +69,10 @@ export default async function EvenementDetailPage({
     prixForfait: evenement.prixForfait ? Number(evenement.prixForfait) : null,
     acompteRequis: evenement.acompteRequis ? Number(evenement.acompteRequis) : null,
   };
+  const clientOptions = clients.map((client) => ({
+    id: client.id,
+    label: `${client.prenom} ${client.nom ?? ""}`.trim(),
+  }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -88,18 +124,53 @@ export default async function EvenementDetailPage({
                     <p className="text-xs text-[color:var(--ink-muted)]">
                       {p.contact ?? "Contact non renseigné"} • {p.statut}
                     </p>
+                    <p className="mt-1 text-xs text-[color:var(--ink-muted)]">
+                      Acompte: {Number(p.acomptePaye ?? 0).toLocaleString("fr-FR")} XOF •
+                      Solde: {Number(p.soldeRestant ?? 0).toLocaleString("fr-FR")} XOF
+                    </p>
+                    {p.factures[0] ? (
+                      <p className="mt-1 text-xs text-[color:var(--ink-muted)]">
+                        Facture liée: {p.factures[0].numero} • {p.factures[0].statut}
+                      </p>
+                    ) : null}
                   </div>
                 ))
               )}
             </div>
           </div>
 
+          {evenement.factures.length > 0 ? (
+            <div className="rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow)]">
+              <h3 className="font-display text-xl text-[color:var(--ink)]">
+                Factures événement
+              </h3>
+              <div className="mt-4 flex flex-col gap-3">
+                {evenement.factures.map((facture) => (
+                  <div
+                    key={facture.id}
+                    className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-sm"
+                  >
+                    <p className="font-semibold text-[color:var(--ink)]">
+                      {facture.numero}
+                    </p>
+                    <p className="text-xs text-[color:var(--ink-muted)]">
+                      {facture.client?.prenom} {facture.client?.nom ?? ""} • {facture.statut}
+                    </p>
+                    <p className="mt-1 text-xs text-[color:var(--ink-muted)]">
+                      Total: {Number(facture.montantTotal).toLocaleString("fr-FR")} XOF • Payé: {Number(facture.montantPaye).toLocaleString("fr-FR")} XOF
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div className="rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow)]">
             <h3 className="font-display text-xl text-[color:var(--ink)]">
               Ajouter un participant
             </h3>
             <div className="mt-4">
-              <ParticipantForm evenementId={evenement.id} />
+              <ParticipantForm evenementId={evenement.id} clients={clientOptions} />
             </div>
           </div>
         </div>

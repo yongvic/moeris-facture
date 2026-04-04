@@ -5,8 +5,16 @@ import { registerSchema } from "../../../../lib/validators/auth";
 import { zodErrorMessage } from "../../../../lib/validation";
 import { rateLimit } from "../../../../lib/rate-limit";
 import { getRequestIp } from "../../../../lib/request";
+import { createAuditLog } from "../../../../lib/audit";
 
 export async function POST(request: Request) {
+  if (process.env.ALLOW_PUBLIC_REGISTRATION !== "true") {
+    return NextResponse.json(
+      { error: "L'inscription publique est désactivée." },
+      { status: 403 }
+    );
+  }
+
   const ip = getRequestIp(request);
   const limit = rateLimit(`register:${ip}`, {
     max: 5,
@@ -16,7 +24,10 @@ export async function POST(request: Request) {
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Trop de tentatives. Réessayez plus tard." },
-      { status: 429 }
+      {
+        status: 429,
+        headers: { "Retry-After": String(limit.retryAfterSeconds) },
+      }
     );
   }
 
@@ -36,7 +47,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const { email, password, nom, prenom } = parsed.data;
+  const email = parsed.data.email.trim().toLowerCase();
+  const { password, nom, prenom } = parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -49,7 +61,7 @@ export async function POST(request: Request) {
   const hash = await bcrypt.hash(password, 12);
 
   try {
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         email,
         password: hash,
@@ -57,6 +69,13 @@ export async function POST(request: Request) {
         prenom,
         role: "STAFF",
       },
+    });
+    await createAuditLog({
+      actorId: user.id,
+      action: "AUTH_REGISTER",
+      entityType: "User",
+      entityId: user.id,
+      details: { email: user.email, ip },
     });
 
     return NextResponse.json({ ok: true });

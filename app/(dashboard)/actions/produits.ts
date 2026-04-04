@@ -6,8 +6,10 @@ import { prisma } from "../../../lib/prisma";
 import { requireRole } from "../../../lib/auth-helpers";
 import { produitCreateSchema, produitUpdateSchema } from "../../../lib/validators/produit";
 import { zodErrorMessage } from "../../../lib/validation";
+import { parseBoolean, parseCsvFile, parseNullableString } from "../../../lib/csv";
+import { createAuditLog } from "../../../lib/audit";
 
-type FormState = { error?: string };
+type FormState = { error?: string; message?: string };
 
 const normalize = (value: FormDataEntryValue | null) => {
   if (value === null) return null;
@@ -48,6 +50,12 @@ export async function createProduit(
   });
 
   revalidatePath("/restaurant/menu");
+  await createAuditLog({
+    actorId: gate.session.user?.id ?? null,
+    action: "PRODUIT_CREATED",
+    entityType: "Produit",
+    entityId: produit.id,
+  });
   redirect(`/restaurant/menu/${produit.id}`);
 }
 
@@ -83,5 +91,82 @@ export async function updateProduit(
 
   revalidatePath(`/restaurant/menu/${id}`);
   revalidatePath("/restaurant/menu");
+  await createAuditLog({
+    actorId: gate.session.user?.id ?? null,
+    action: "PRODUIT_UPDATED",
+    entityType: "Produit",
+    entityId: id,
+  });
   return {};
+}
+
+export async function importProduitsCsv(
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const gate = await requireRole("MANAGER");
+  if ("error" in gate) return { error: "Non autorisé." };
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Fichier CSV requis." };
+  }
+
+  let rows;
+  try {
+    rows = await parseCsvFile(file);
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "CSV illisible.",
+    };
+  }
+
+  let imported = 0;
+  const errors: string[] = [];
+
+  for (const [index, row] of rows.entries()) {
+    const payload = {
+      nom: parseNullableString(row.nom) ?? "",
+      description: parseNullableString(row.description),
+      prix: Number(row.prix ?? 0),
+      categorie: parseNullableString(row.categorie) ?? "",
+      disponible: parseBoolean(row.disponible, true),
+      archive: parseBoolean(row.archive, false),
+      imageUrl: parseNullableString(row.imageUrl),
+    };
+
+    const parsed = produitCreateSchema.safeParse(payload);
+    if (!parsed.success) {
+      errors.push(`Ligne ${index + 2}: ${zodErrorMessage(parsed.error)}`);
+      continue;
+    }
+
+    try {
+      await prisma.produit.create({
+        data: parsed.data,
+      });
+      imported += 1;
+    } catch {
+      errors.push(`Ligne ${index + 2}: échec d'import.`);
+    }
+  }
+
+  revalidatePath("/restaurant/menu");
+  await createAuditLog({
+    actorId: gate.session.user?.id ?? null,
+    action: "PRODUITS_IMPORTED",
+    entityType: "Produit",
+    details: { imported, errors: errors.length },
+  });
+
+  if (imported === 0) {
+    return { error: errors[0] ?? "Aucun produit importé." };
+  }
+
+  return {
+    message:
+      errors.length > 0
+        ? `${imported} produits importés, ${errors.length} lignes ignorées.`
+        : `${imported} produits importés.`,
+  };
 }

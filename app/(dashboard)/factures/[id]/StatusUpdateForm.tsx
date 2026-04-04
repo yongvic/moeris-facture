@@ -13,13 +13,9 @@ export default function StatusUpdateForm({ factureId }: { factureId: string }) {
   return (
     <form action={formAction} className="mt-6 grid gap-3">
       <input type="hidden" name="id" value={factureId} />
-      <SubmitButton
-        name="statut"
-        value="PAYEE"
-        label="Marquer comme payée"
-        loadingLabel="Mise à jour..."
-        className="rounded-full border border-[color:var(--stroke)] px-4 py-2 text-sm font-semibold text-[color:var(--ink)]"
-      />
+      <div className="text-sm text-[color:var(--ink-muted)]">
+        L’encaissement doit passer par l’ajout d’un paiement pour conserver une comptabilité exacte.
+      </div>
       <SubmitButton
         name="statut"
         value="ANNULEE"

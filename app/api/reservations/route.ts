@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { requireRole } from "../../../lib/auth-helpers";
 import { reservationCreateSchema } from "../../../lib/validators/reservation";
+import {
+  createReservationRecord,
+  ReservationServiceError,
+} from "../../../lib/services/reservations";
 
 export async function GET() {
   const gate = await requireRole("STAFF");
@@ -20,7 +24,10 @@ export async function POST(request: Request) {
   if ("error" in gate) return gate.error;
 
   const payload = await request.json();
-  const parsed = reservationCreateSchema.safeParse(payload);
+  const parsed = reservationCreateSchema.safeParse({
+    ...payload,
+    statut: undefined,
+  });
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Validation failed", details: parsed.error.flatten() },
@@ -28,53 +35,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const dateArrivee = new Date(parsed.data.dateArrivee);
-  const dateDepart = new Date(parsed.data.dateDepart);
-
-  if (dateDepart <= dateArrivee) {
-    return NextResponse.json(
-      { error: "La date de départ doit être après la date d'arrivée." },
-      { status: 400 }
-    );
+  try {
+    const reservation = await createReservationRecord(parsed.data);
+    return NextResponse.json({ data: reservation }, { status: 201 });
+  } catch (error) {
+    if (error instanceof ReservationServiceError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    throw error;
   }
-  const nombreNuits =
-    parsed.data.nombreNuits ??
-    Math.max(1, Math.ceil((dateDepart.getTime() - dateArrivee.getTime()) / 86400000));
-
-  const overlap = await prisma.reservation.findFirst({
-    where: {
-      chambreId: parsed.data.chambreId,
-      statut: { not: "ANNULEE" },
-      OR: [
-        {
-          dateArrivee: { lte: dateDepart },
-          dateDepart: { gte: dateArrivee },
-        },
-      ],
-    },
-  });
-
-  if (overlap) {
-    return NextResponse.json(
-      { error: "Conflit de réservation détecté" },
-      { status: 409 }
-    );
-  }
-
-  const reservation = await prisma.reservation.create({
-    data: {
-      clientId: parsed.data.clientId,
-      chambreId: parsed.data.chambreId,
-      dateArrivee,
-      dateDepart,
-      nombreNuits,
-      prixNegocie: parsed.data.prixNegocie ?? null,
-      nombreAdultes: parsed.data.nombreAdultes ?? 1,
-      nombreEnfants: parsed.data.nombreEnfants ?? 0,
-      statut: parsed.data.statut ?? "CONFIRMEE",
-      notes: parsed.data.notes ?? null,
-    },
-  });
-
-  return NextResponse.json({ data: reservation }, { status: 201 });
 }

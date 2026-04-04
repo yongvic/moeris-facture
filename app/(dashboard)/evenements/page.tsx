@@ -74,9 +74,12 @@ export default async function EvenementsPage() {
                   {statusLabel[event.statut] ?? event.statut}
                 </StatusBadge>
               </div>
-              <button className="mt-5 w-full rounded-full border border-[color:var(--stroke)] px-4 py-2 text-sm font-semibold text-[color:var(--ink)]">
+              <Link
+                href={`/evenements/${event.id}`}
+                className="mt-5 block w-full rounded-full border border-[color:var(--stroke)] px-4 py-2 text-center text-sm font-semibold text-[color:var(--ink)]"
+              >
                 Voir les participants
-              </button>
+              </Link>
             </div>
           ))
         )}

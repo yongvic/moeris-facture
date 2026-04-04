@@ -1,11 +1,41 @@
 import Link from "next/link";
 import StatusBadge from "../../components/StatusBadge";
+import CsvImportForm from "../../components/CsvImportForm";
 import { prisma } from "../../../lib/prisma";
 import { formatDate, formatXof } from "../../../lib/format";
+import { importClientsCsv } from "../actions/clients";
 
-export default async function ClientsPage() {
+type SearchParams = Promise<{
+  q?: string;
+  segment?: string;
+}>;
+
+export default async function ClientsPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const filters = await searchParams;
+  const q = filters.q?.trim() ?? "";
+  const segment = filters.segment?.trim() ?? "";
+
   const clients = await prisma.client.findMany({
-    where: { actif: true },
+    where: {
+      actif: true,
+      ...(segment
+        ? { segment: segment as "STANDARD" | "FREQUENT" | "VIP" | "PREMIUM" }
+        : {}),
+      ...(q
+        ? {
+            OR: [
+              { prenom: { contains: q, mode: "insensitive" } },
+              { nom: { contains: q, mode: "insensitive" } },
+              { email: { contains: q, mode: "insensitive" } },
+              { telephone: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
     orderBy: { createdAt: "desc" },
     include: {
       factures: {
@@ -30,19 +60,16 @@ export default async function ClientsPage() {
             Clients & segmentation
           </h2>
           <p className="mt-2 text-sm text-[color:var(--ink-muted)]">
-            Recherche rapide et historique complet des dépenses.
+            Recherche réelle, historique de dépenses et import opérationnel.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-            <button className="rounded-full border border-[color:var(--stroke)] px-4 py-2 text-sm font-semibold text-[color:var(--ink)]">
-              Import CSV
-            </button>
-            <Link
-              href="/api/exports/clients"
-              className="rounded-full border border-[color:var(--stroke)] px-4 py-2 text-sm font-semibold text-[color:var(--ink)] text-center"
-            >
-              Export CSV
-            </Link>
+          <Link
+            href="/api/exports/clients"
+            className="rounded-full border border-[color:var(--stroke)] px-4 py-2 text-sm font-semibold text-[color:var(--ink)] text-center"
+          >
+            Export CSV
+          </Link>
           <Link
             href="/clients/nouveau"
             className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white text-center"
@@ -52,28 +79,48 @@ export default async function ClientsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow)]">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-1 items-center gap-2 rounded-full border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-2 text-sm text-[color:var(--ink-muted)]">
-            <span className="text-xs">⌕</span>
+      <div className="grid gap-4 lg:grid-cols-[1.4fr_0.8fr]">
+        <form className="grid gap-4 rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow)] md:grid-cols-[1.2fr_0.8fr_auto] md:items-end">
+          <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
+            Recherche
             <input
-              placeholder="Rechercher par nom, téléphone, email..."
-              className="w-full bg-transparent text-[color:var(--ink)] placeholder:text-[color:var(--ink-muted)] focus:outline-none"
+              type="search"
+              name="q"
+              defaultValue={q}
+              placeholder="Nom, email, téléphone"
+              className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)]"
             />
-          </div>
-          <div className="flex gap-2 text-xs">
-            <button className="rounded-full border border-[color:var(--stroke)] px-3 py-2 font-semibold text-[color:var(--ink)]">
-              Segment
-            </button>
-            <button className="rounded-full border border-[color:var(--stroke)] px-3 py-2 font-semibold text-[color:var(--ink)]">
-              Dernière visite
-            </button>
-            <button className="rounded-full border border-[color:var(--stroke)] px-3 py-2 font-semibold text-[color:var(--ink)]">
-              Export CSV
-            </button>
-          </div>
-        </div>
+          </label>
+          <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
+            Segment
+            <select
+              name="segment"
+              defaultValue={segment}
+              className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)]"
+            >
+              <option value="">Tous</option>
+              <option value="STANDARD">Standard</option>
+              <option value="FREQUENT">Fréquent</option>
+              <option value="VIP">VIP</option>
+              <option value="PREMIUM">Premium</option>
+            </select>
+          </label>
+          <button
+            type="submit"
+            className="rounded-full bg-[color:var(--accent)] px-4 py-3 text-sm font-semibold text-white"
+          >
+            Filtrer
+          </button>
+        </form>
 
+        <CsvImportForm
+          action={importClientsCsv}
+          title="Import clients"
+          hint="Colonnes supportées: prenom, nom, email, telephone, segment, nationalite, numeroPiece, adresse, notes."
+        />
+      </div>
+
+      <div className="flex flex-col gap-4 rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow)]">
         <div className="overflow-hidden rounded-2xl border border-[color:var(--stroke)]">
           <table className="w-full text-left text-sm">
             <thead className="bg-[color:var(--paper-2)] text-[color:var(--ink-muted)]">
@@ -92,7 +139,7 @@ export default async function ClientsPage() {
                     colSpan={5}
                     className="px-4 py-6 text-sm text-[color:var(--ink-muted)]"
                   >
-                    Aucun client enregistré pour le moment.
+                    Aucun client trouvé avec ces filtres.
                   </td>
                 </tr>
               ) : (
@@ -105,41 +152,39 @@ export default async function ClientsPage() {
                     client.factures.length > 0
                       ? client.factures[0].createdAt
                       : client.createdAt;
+
                   return (
-                <tr key={client.id} className="border-t border-[color:var(--stroke)]">
-                  <td className="px-4 py-3 font-semibold text-[color:var(--ink)]">
-                    <Link
-                      href={`/clients/${client.id}`}
-                      className="hover:underline"
-                    >
-                      {client.prenom} {client.nom ?? ""}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge
-                      tone={
-                        client.segment === "VIP"
-                          ? "success"
-                          : client.segment === "FREQUENT"
-                          ? "info"
-                          : "neutral"
-                      }
-                    >
-                      {client.segment}
-                    </StatusBadge>
-                  </td>
-                  <td className="px-4 py-3 text-[color:var(--ink-muted)]">
-                    {client.factures.length}
-                  </td>
-                  <td className="px-4 py-3 text-[color:var(--ink-muted)]">
-                    {formatDate(lastVisit)}
-                  </td>
-                  <td className="px-4 py-3 font-semibold text-[color:var(--ink)]">
-                    {formatXof(total)}
-                  </td>
-                </tr>
-                );
-              })
+                    <tr key={client.id} className="border-t border-[color:var(--stroke)]">
+                      <td className="px-4 py-3 font-semibold text-[color:var(--ink)]">
+                        <Link href={`/clients/${client.id}`} className="hover:underline">
+                          {client.prenom} {client.nom ?? ""}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge
+                          tone={
+                            client.segment === "VIP"
+                              ? "success"
+                              : client.segment === "FREQUENT"
+                                ? "info"
+                                : "neutral"
+                          }
+                        >
+                          {client.segment}
+                        </StatusBadge>
+                      </td>
+                      <td className="px-4 py-3 text-[color:var(--ink-muted)]">
+                        {client.factures.length}
+                      </td>
+                      <td className="px-4 py-3 text-[color:var(--ink-muted)]">
+                        {formatDate(lastVisit)}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-[color:var(--ink)]">
+                        {formatXof(total)}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

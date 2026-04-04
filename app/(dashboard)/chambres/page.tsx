@@ -1,19 +1,19 @@
 import Link from "next/link";
+import StatusBadge from "../../components/StatusBadge";
 import { prisma } from "../../../lib/prisma";
+import { formatXof } from "../../../lib/format";
 
-const jours = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-
-const statusClasses: Record<string, string> = {
-  DISPONIBLE: "bg-[color:rgba(5,150,105,0.25)]",
-  OCCUPEE: "bg-[color:rgba(37,99,235,0.2)]",
-  MAINTENANCE: "bg-[color:rgba(220,38,38,0.2)]",
-  HORS_SERVICE: "bg-[color:rgba(217,119,6,0.25)]",
+const statusTone: Record<string, "success" | "info" | "danger" | "warning"> = {
+  DISPONIBLE: "success",
+  OCCUPEE: "info",
+  MAINTENANCE: "danger",
+  HORS_SERVICE: "warning",
 };
 
 export default async function ChambresPage() {
   const chambres = await prisma.chambre.findMany({
     orderBy: { numero: "asc" },
-    take: 12,
+    take: 50,
   });
 
   return (
@@ -24,10 +24,11 @@ export default async function ChambresPage() {
             Hébergement
           </p>
           <h2 className="mt-1 font-display text-2xl text-[color:var(--ink)]">
-            Planning des chambres
+            Inventaire des chambres
           </h2>
           <p className="mt-2 text-sm text-[color:var(--ink-muted)]">
-            Vue 30 jours avec codes couleur temps réel.
+            Vue exploitable des statuts, capacités et tarifs réellement
+            configurés.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -47,49 +48,62 @@ export default async function ChambresPage() {
       </div>
 
       <div className="rounded-3xl border border-[color:var(--stroke)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow)]">
-        <div className="grid grid-cols-8 gap-2 text-xs text-[color:var(--ink-muted)]">
-          <div className="col-span-2">Chambre</div>
-          {jours.map((jour) => (
-            <div key={jour} className="text-center">
-              {jour}
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 flex flex-col gap-2">
+        <div className="overflow-hidden rounded-2xl border border-[color:var(--stroke)]">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-[color:var(--paper-2)] text-[color:var(--ink-muted)]">
+              <tr>
+                <th className="px-4 py-3 font-medium">Chambre</th>
+                <th className="px-4 py-3 font-medium">Type</th>
+                <th className="px-4 py-3 font-medium">Capacité</th>
+                <th className="px-4 py-3 font-medium">Prix / nuit</th>
+                <th className="px-4 py-3 font-medium">Statut</th>
+              </tr>
+            </thead>
+            <tbody>
           {chambres.length === 0 ? (
-            <div className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-6 text-sm text-[color:var(--ink-muted)]">
-              Aucune chambre enregistrée.
-            </div>
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-4 py-6 text-sm text-[color:var(--ink-muted)]"
+                >
+                  Aucune chambre enregistrée.
+                </td>
+              </tr>
           ) : (
             chambres.map(
-              (chambre: {
-                id: string;
-                numero: string;
-                nom: string | null;
-                type: string;
-                capacite: number;
-                prixNuit: unknown;
-                statut: string;
-              }) => (
-              <div key={chambre.id} className="grid grid-cols-8 gap-2">
-              <Link
-                href={`/chambres/${chambre.id}`}
-                className="col-span-2 rounded-xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-3 py-2 text-sm font-semibold text-[color:var(--ink)] hover:border-[color:var(--accent)]"
-              >
-                {chambre.nom ?? chambre.numero}
-              </Link>
-              {jours.map((jour) => (
-                <div
-                  key={`${chambre.id}-${jour}`}
-                  className={`h-9 rounded-xl border border-[color:var(--stroke)] ${
-                    statusClasses[chambre.statut] ?? "bg-[color:var(--paper-2)]"
-                  }`}
-                />
-              ))}
-              </div>
+              (chambre) => (
+                <tr
+                  key={chambre.id}
+                  className="border-t border-[color:var(--stroke)]"
+                >
+                  <td className="px-4 py-3 font-semibold text-[color:var(--ink)]">
+                    <Link
+                      href={`/chambres/${chambre.id}`}
+                      className="hover:underline"
+                    >
+                      {chambre.nom ?? chambre.numero}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 text-[color:var(--ink-muted)]">
+                    {chambre.type}
+                  </td>
+                  <td className="px-4 py-3 text-[color:var(--ink-muted)]">
+                    {chambre.capacite} pers.
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-[color:var(--ink)]">
+                    {formatXof(Number(chambre.prixNuit))}
+                  </td>
+                  <td className="px-4 py-3">
+                    <StatusBadge tone={statusTone[chambre.statut] ?? "info"}>
+                      {chambre.statut}
+                    </StatusBadge>
+                  </td>
+                </tr>
               )
             )
           )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

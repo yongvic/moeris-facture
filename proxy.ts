@@ -1,28 +1,38 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
+const publicRoutes = ["/login", "/reset-password"];
+
+const registrationEnabled = process.env.ALLOW_PUBLIC_REGISTRATION === "true";
+
 export default withAuth(
-  function middleware(req) {
+  function proxy(req) {
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
 
-    // Protection par rôle pour la zone Admin/Paramètres
     if (pathname.startsWith("/settings") && token?.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
-    
+
+    if (pathname === "/register" && !registrationEnabled) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+
     return NextResponse.next();
   },
   {
     callbacks: {
       authorized({ req, token }) {
         const pathname = req.nextUrl.pathname;
-        
-        // Routes API d'auth et de login toujours autorisées
+
         if (pathname.startsWith("/api/auth")) return true;
-        if (pathname === "/login" || pathname === "/register" || pathname.startsWith("/reset-password")) return true;
-        
-        // Toutes les autres routes nécessitent un token
+        if (publicRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
+          return true;
+        }
+        if (pathname === "/register") {
+          return registrationEnabled;
+        }
+
         return !!token;
       },
     },
@@ -30,6 +40,7 @@ export default withAuth(
 );
 
 export const config = {
-  // Pattern standard pour ignorer les assets statiques, Next.js et les routes API publiques
-  matcher: ["/((?!api/auth|api/password-reset|_next/static|_next/image|favicon.ico|.*\\.svg|.*\\.png).*)"],
+  matcher: [
+    "/((?!api/auth|api/password-reset|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+  ],
 };

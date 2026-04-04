@@ -6,6 +6,7 @@ import StatusBadge from "../../../components/StatusBadge";
 import ConsommationForm from "./ConsommationForm";
 import PaiementForm from "./PaiementForm";
 import StatusUpdateForm from "./StatusUpdateForm";
+import FinancialSettingsForm from "./FinancialSettingsForm";
 
 const statusTone: Record<string, "success" | "warning" | "danger" | "neutral"> = {
   OUVERTE: "neutral",
@@ -41,6 +42,11 @@ export default async function FactureDetailPage({
   }
 
   const total = Number(facture.montantTotal);
+  const montantHt = Number(facture.montantHt);
+  const montantTva = Number(facture.montantTva);
+  const tauxTva = Number(facture.tauxTva);
+  const remiseGlobale = facture.remiseGlobale ? Number(facture.remiseGlobale) : 0;
+  const remisePourcent = facture.remisePourcent ? Number(facture.remisePourcent) : 0;
   const paid = Number(facture.montantPaye);
   const remaining = Math.max(0, total - paid);
 
@@ -159,7 +165,31 @@ export default async function FactureDetailPage({
             </h3>
             <div className="mt-4 flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
               <div className="flex items-center justify-between">
-                <span>Total</span>
+                <span>Montant HT</span>
+                <span className="font-semibold text-[color:var(--ink)]">
+                  {formatXof(montantHt)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Remise globale</span>
+                <span className="font-semibold text-[color:var(--ink)]">
+                  {formatXof(remiseGlobale)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Remise (%)</span>
+                <span className="font-semibold text-[color:var(--ink)]">
+                  {remisePourcent.toFixed(2)}%
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>TVA ({tauxTva.toFixed(2)}%)</span>
+                <span className="font-semibold text-[color:var(--ink)]">
+                  {formatXof(montantTva)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Total TTC</span>
                 <span className="font-semibold text-[color:var(--ink)]">
                   {formatXof(total)}
                 </span>
@@ -178,6 +208,19 @@ export default async function FactureDetailPage({
               </div>
             </div>
 
+            <FinancialSettingsForm
+              facture={{
+                id: facture.id,
+                tauxTva,
+                remiseGlobale: facture.remiseGlobale
+                  ? Number(facture.remiseGlobale)
+                  : null,
+                remisePourcent: facture.remisePourcent
+                  ? Number(facture.remisePourcent)
+                  : null,
+                notes: facture.notes ?? null,
+              }}
+            />
             <StatusUpdateForm factureId={facture.id} />
           </div>
         </div>

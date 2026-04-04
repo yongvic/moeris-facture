@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 import { requireRole } from "../../../../lib/auth-helpers";
 import { factureUpdateSchema } from "../../../../lib/validators/facture";
+import { recalcFacture } from "../../../../lib/billing";
 
 export async function GET(
   _request: Request,
@@ -44,14 +45,51 @@ export async function PATCH(
     );
   }
 
+  if (parsed.data.statut && parsed.data.statut !== "ANNULEE") {
+    return NextResponse.json(
+      { error: "Le statut ne peut plus être forcé. Utilisez les paiements." },
+      { status: 400 }
+    );
+  }
+
+  const currentFacture = await prisma.facture.findUnique({
+    where: { id },
+    select: { montantPaye: true, statut: true },
+  });
+  if (!currentFacture) {
+    return NextResponse.json({ error: "Facture introuvable" }, { status: 404 });
+  }
+  if (parsed.data.statut === "ANNULEE" && Number(currentFacture.montantPaye) > 0) {
+    return NextResponse.json(
+      { error: "Impossible d'annuler une facture avec paiements enregistrés." },
+      { status: 400 }
+    );
+  }
+
   const facture = await prisma.facture.update({
     where: { id },
     data: {
-      ...parsed.data,
-      clotureeAt:
-        parsed.data.statut === "PAYEE" ? new Date() : undefined,
+      ...(parsed.data.statut === "ANNULEE" ? { statut: "ANNULEE", clotureeAt: null } : {}),
+      ...(parsed.data.tauxTva !== undefined && parsed.data.tauxTva !== null
+        ? { tauxTva: parsed.data.tauxTva }
+        : {}),
+      ...(parsed.data.notes !== undefined ? { notes: parsed.data.notes } : {}),
+      ...(parsed.data.remiseGlobale !== undefined
+        ? { remiseGlobale: parsed.data.remiseGlobale }
+        : {}),
+      ...(parsed.data.remisePourcent !== undefined
+        ? { remisePourcent: parsed.data.remisePourcent }
+        : {}),
     },
   });
+
+  if (
+    parsed.data.tauxTva !== undefined ||
+    parsed.data.remiseGlobale !== undefined ||
+    parsed.data.remisePourcent !== undefined
+  ) {
+    await recalcFacture(id);
+  }
 
   return NextResponse.json({ data: facture });
 }

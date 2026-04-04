@@ -14,7 +14,6 @@ const navItems = [
   { label: "Activités", href: "/activites" },
   { label: "Événements", href: "/evenements" },
   { label: "Analytics", href: "/analytics" },
-  { label: "Admin", href: "/settings" },
 ];
 
 const isActiveRoute = (pathname: string, href: string) => {
@@ -24,12 +23,16 @@ const isActiveRoute = (pathname: string, href: string) => {
   return pathname.startsWith(href);
 };
 
-export default function SidebarNav() {
+export default function SidebarNav({ role }: { role?: string }) {
   const pathname = usePathname();
+  const items =
+    role === "ADMIN"
+      ? [...navItems, { label: "Admin", href: "/settings" }]
+      : navItems;
 
   return (
     <nav className="flex flex-col gap-1 text-sm">
-      {navItems.map((item) => {
+      {items.map((item) => {
         const active = isActiveRoute(pathname, item.href);
         return (
           <Link

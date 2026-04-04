@@ -6,6 +6,7 @@ import { zodErrorMessage } from "../../../../lib/validation";
 import { hashToken } from "../../../../lib/auth-tokens";
 import { rateLimit } from "../../../../lib/rate-limit";
 import { getRequestIp } from "../../../../lib/request";
+import { createAuditLog } from "../../../../lib/audit";
 
 export async function POST(request: Request) {
   const ip = getRequestIp(request);
@@ -17,7 +18,10 @@ export async function POST(request: Request) {
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Trop de tentatives. Réessayez plus tard." },
-      { status: 429 }
+      {
+        status: 429,
+        headers: { "Retry-After": String(limit.retryAfterSeconds) },
+      }
     );
   }
 
@@ -62,6 +66,16 @@ export async function POST(request: Request) {
       data: { password: hash },
     });
     await tx.passwordResetToken.deleteMany({ where: { userId: record.userId } });
+    await createAuditLog(
+      {
+        actorId: record.userId,
+        action: "AUTH_PASSWORD_RESET_CONFIRMED",
+        entityType: "User",
+        entityId: record.userId,
+        details: { ip },
+      },
+      tx
+    );
   });
 
   return NextResponse.json({ ok: true });

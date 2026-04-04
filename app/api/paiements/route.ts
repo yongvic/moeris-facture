@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
 import { requireRole } from "../../../lib/auth-helpers";
 import { paiementCreateSchema } from "../../../lib/validators/paiement";
-import { recalcFacture } from "../../../lib/billing";
+import {
+  addPaiementToFacture,
+  FactureServiceError,
+} from "../../../lib/services/factures";
 
 export async function POST(request: Request) {
   const gate = await requireRole("STAFF");
@@ -17,27 +19,21 @@ export async function POST(request: Request) {
     );
   }
 
-  if (
-    ["VIREMENT", "MOBILE_MONEY"].includes(parsed.data.modePaiement) &&
-    !parsed.data.reference
-  ) {
-    return NextResponse.json(
-      { error: "Référence obligatoire pour virement ou mobile money." },
-      { status: 400 }
-    );
-  }
-
-  const paiement = await prisma.paiement.create({
-    data: {
+  try {
+    const paiement = await addPaiementToFacture({
       factureId: parsed.data.factureId,
       montant: parsed.data.montant,
       modePaiement: parsed.data.modePaiement,
       reference: parsed.data.reference ?? null,
       note: parsed.data.note ?? null,
-    },
-  });
+      encaisseePar: gate.session.user?.name ?? null,
+    });
 
-  await recalcFacture(parsed.data.factureId);
-
-  return NextResponse.json({ data: paiement }, { status: 201 });
+    return NextResponse.json({ data: paiement }, { status: 201 });
+  } catch (error) {
+    if (error instanceof FactureServiceError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    throw error;
+  }
 }

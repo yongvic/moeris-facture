@@ -3,15 +3,41 @@ import { prisma } from "../../../../lib/prisma";
 import FactureForm from "./FactureForm";
 
 export default async function NouvelleFacturePage() {
-  const clients = await prisma.client.findMany({
-    where: { actif: true },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
+  const [clients, reservations, evenements] = await Promise.all([
+    prisma.client.findMany({
+      where: { actif: true },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+    prisma.reservation.findMany({
+      where: { statut: { in: ["CONFIRMEE", "CHECK_IN_EFFECTUE"] } },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: { client: true, chambre: true },
+    }),
+    prisma.evenement.findMany({
+      where: { statut: { not: "ANNULE" } },
+      orderBy: { dateDebut: "desc" },
+      take: 50,
+    }),
+  ]);
 
   const clientOptions = clients.map((client) => ({
     id: client.id,
     label: `${client.prenom} ${client.nom ?? ""}`.trim(),
+  }));
+  const reservationOptions = reservations.map((reservation) => ({
+    id: reservation.id,
+    clientId: reservation.clientId,
+    label: `${reservation.client.prenom} ${reservation.client.nom ?? ""} • ${reservation.chambre.nom ?? reservation.chambre.numero}`,
+  }));
+  const evenementOptions = evenements.map((evenement) => ({
+    id: evenement.id,
+    label: `${evenement.titre} • ${new Date(evenement.dateDebut).toLocaleDateString("fr-FR")}`,
+    prixForfait: evenement.prixForfait ? Number(evenement.prixForfait) : null,
+    prixParParticipant: evenement.prixParParticipant
+      ? Number(evenement.prixParParticipant)
+      : null,
   }));
 
   return (
@@ -24,11 +50,15 @@ export default async function NouvelleFacturePage() {
           Nouvelle facture
         </h2>
         <p className="mt-2 text-sm text-[color:var(--ink-muted)]">
-          Sélectionnez un client pour démarrer une facture.
+          Crée une facture simple, une facture de séjour ou une facture événement.
         </p>
       </div>
 
-      <FactureForm clients={clientOptions} />
+      <FactureForm
+        clients={clientOptions}
+        reservations={reservationOptions}
+        evenements={evenementOptions}
+      />
       {clients.length === 0 ? (
         <div className="mt-4">
           <Link

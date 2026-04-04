@@ -69,6 +69,9 @@ export default function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             className="rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--paper-2)] px-4 py-3 text-[color:var(--ink)] focus:border-[color:var(--accent)] focus:outline-none"
             placeholder="••••••••"
           />
+          <span className="text-xs text-[color:var(--ink-muted)]">
+            Utilise une majuscule, une minuscule, un chiffre et un symbole.
+          </span>
         </label>
         <label className="flex flex-col gap-2 text-sm text-[color:var(--ink-muted)]">
           Confirmer le mot de passe

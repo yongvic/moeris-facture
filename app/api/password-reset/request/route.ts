@@ -6,6 +6,7 @@ import { generateResetToken, hashToken } from "../../../../lib/auth-tokens";
 import { sendPasswordResetEmail } from "../../../../lib/email";
 import { getBaseUrl, getRequestIp } from "../../../../lib/request";
 import { rateLimit } from "../../../../lib/rate-limit";
+import { createAuditLog } from "../../../../lib/audit";
 
 export async function POST(request: Request) {
   const ip = getRequestIp(request);
@@ -17,7 +18,10 @@ export async function POST(request: Request) {
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Trop de demandes. Réessayez plus tard." },
-      { status: 429 }
+      {
+        status: 429,
+        headers: { "Retry-After": String(limit.retryAfterSeconds) },
+      }
     );
   }
 
@@ -37,7 +41,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { email } = parsed.data;
+  const email = parsed.data.email.trim().toLowerCase();
   const user = await prisma.user.findUnique({ where: { email } });
 
   if (!user || !user.actif) {
@@ -57,6 +61,16 @@ export async function POST(request: Request) {
         expiresAt,
       },
     });
+    await createAuditLog(
+      {
+        actorId: user.id,
+        action: "AUTH_PASSWORD_RESET_REQUESTED",
+        entityType: "User",
+        entityId: user.id,
+        details: { ip },
+      },
+      tx
+    );
   });
 
   const baseUrl = getBaseUrl(request);

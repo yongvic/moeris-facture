@@ -13,12 +13,18 @@ import {
 import { prisma } from "../../../../../lib/prisma";
 import { requireRole } from "../../../../../lib/auth-helpers";
 
-const formatXof = (value: number) =>
-  new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: "XOF",
-    maximumFractionDigits: 0,
-  }).format(value);
+const formatNumber = (value: number, fractionDigits = 0) => {
+  const [whole, decimals] = value.toFixed(fractionDigits).split(".");
+  const groupedWhole = whole.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  if (!decimals || Number(decimals) === 0) {
+    return groupedWhole;
+  }
+  return `${groupedWhole},${decimals}`;
+};
+
+const formatXof = (value: number) => `${formatNumber(value)} FCFA`;
+const formatQuantity = (value: number) =>
+  Number.isInteger(value) ? String(value) : formatNumber(value, 2);
 
 const styles = StyleSheet.create({
   page: {
@@ -37,6 +43,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontWeight: "bold" },
   section: { marginBottom: 16 },
   label: { fontSize: 9, color: "#6B6256" },
+  muted: { fontSize: 8, color: "#6B6256", marginTop: 2 },
   tableHeader: {
     flexDirection: "row",
     borderBottomWidth: 1,
@@ -76,7 +83,20 @@ export async function GET(
     where: { id },
     include: {
       client: true,
-      consommations: { orderBy: { createdAt: "asc" } },
+      reservation: {
+        include: {
+          chambre: {
+            select: { numero: true, nom: true },
+          },
+        },
+      },
+      evenement: {
+        select: { titre: true },
+      },
+      consommations: {
+        where: { supprimee: false },
+        orderBy: { createdAt: "asc" },
+      },
       paiements: { orderBy: { createdAt: "asc" } },
     },
   });
@@ -101,6 +121,11 @@ export async function GET(
   const hotelRegistry = process.env.HOTEL_REGISTRY ?? "";
 
   const total = Number(facture.montantTotal);
+  const montantHt = Number(facture.montantHt);
+  const montantTva = Number(facture.montantTva);
+  const tauxTva = Number(facture.tauxTva);
+  const remiseGlobale = facture.remiseGlobale ? Number(facture.remiseGlobale) : 0;
+  const remisePourcent = facture.remisePourcent ? Number(facture.remisePourcent) : 0;
   const paid = Number(facture.montantPaye);
   const remaining = Math.max(0, total - paid);
 
@@ -135,9 +160,25 @@ export async function GET(
           <Text>
             {facture.client?.prenom} {facture.client?.nom ?? ""}
           </Text>
+          {facture.client?.telephone ? (
+            <Text style={styles.muted}>Téléphone: {facture.client.telephone}</Text>
+          ) : null}
+          {facture.client?.email ? (
+            <Text style={styles.muted}>Email: {facture.client.email}</Text>
+          ) : null}
           <Text style={styles.label}>
             Date: {new Date(facture.createdAt).toLocaleDateString("fr-FR")}
           </Text>
+          <Text style={styles.label}>Statut: {facture.statut}</Text>
+          {facture.reservation ? (
+            <Text style={styles.muted}>
+              Réservation: {facture.reservation.chambre.nom ?? facture.reservation.chambre.numero}
+            </Text>
+          ) : null}
+          {facture.evenement ? (
+            <Text style={styles.muted}>Événement: {facture.evenement.titre}</Text>
+          ) : null}
+          {facture.notes ? <Text style={styles.muted}>Notes: {facture.notes}</Text> : null}
         </View>
 
         <View style={styles.section}>
@@ -152,7 +193,7 @@ export async function GET(
             <View style={styles.row} key={item.id}>
               <Text style={styles.colCategory}>{item.categorie}</Text>
               <Text style={styles.colDesc}>{item.description}</Text>
-              <Text style={styles.colQty}>{Number(item.quantite)}</Text>
+              <Text style={styles.colQty}>{formatQuantity(Number(item.quantite))}</Text>
               <Text style={styles.colUnit}>
                 {formatXof(Number(item.prixUnitaire))}
               </Text>
@@ -165,7 +206,23 @@ export async function GET(
 
         <View style={styles.totals}>
           <View style={styles.totalRow}>
-            <Text>Sous-total</Text>
+            <Text>Remise globale</Text>
+            <Text>{formatXof(remiseGlobale)}</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text>Remise (%)</Text>
+            <Text>{remisePourcent.toFixed(2)}%</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text>Montant HT</Text>
+            <Text>{formatXof(montantHt)}</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text>TVA ({tauxTva.toFixed(2)}%)</Text>
+            <Text>{formatXof(montantTva)}</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text>Total TTC</Text>
             <Text>{formatXof(total)}</Text>
           </View>
           <View style={styles.totalRow}>
@@ -184,10 +241,18 @@ export async function GET(
             <Text>Aucun paiement enregistré.</Text>
           ) : (
             facture.paiements.map((payment) => (
-              <Text key={payment.id}>
-                {payment.modePaiement} • {formatXof(Number(payment.montant))} •{" "}
-                {new Date(payment.createdAt).toLocaleDateString("fr-FR")}
-              </Text>
+              <View key={payment.id} style={{ marginBottom: 4 }}>
+                <Text>
+                  {payment.modePaiement} • {formatXof(Number(payment.montant))} •{" "}
+                  {new Date(payment.createdAt).toLocaleDateString("fr-FR")}
+                </Text>
+                {payment.reference ? (
+                  <Text style={styles.muted}>Référence: {payment.reference}</Text>
+                ) : null}
+                {payment.note ? (
+                  <Text style={styles.muted}>Note: {payment.note}</Text>
+                ) : null}
+              </View>
             ))
           )}
         </View>

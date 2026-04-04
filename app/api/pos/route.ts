@@ -34,6 +34,8 @@ const posSchema = z.object({
   reference: z.string().optional(),
 });
 
+const defaultTvaRate = Number(process.env.DEFAULT_TVA_RATE ?? 18);
+
 export async function POST(request: Request) {
   const gate = await requireRole("STAFF");
   if ("error" in gate) return gate.error;
@@ -65,7 +67,7 @@ export async function POST(request: Request) {
 
   const itemIds = payload.items.map((item) => item.id);
   const produits = await prisma.produit.findMany({
-    where: { id: { in: itemIds }, archive: false },
+    where: { id: { in: itemIds }, archive: false, disponible: true },
   });
 
   if (produits.length !== itemIds.length) {
@@ -83,13 +85,27 @@ export async function POST(request: Request) {
       if (!payload.client?.prenom) {
         throw new Error("Client manquant.");
       }
-      const client = await tx.client.create({
-        data: {
-          prenom: payload.client.prenom,
-          telephone: payload.client.telephone ?? null,
-        },
-      });
-      clientId = client.id;
+      const existingClient = payload.client.telephone
+        ? await tx.client.findFirst({
+            where: { telephone: payload.client.telephone },
+            select: { id: true },
+          })
+        : await tx.client.findFirst({
+            where: { prenom: payload.client.prenom },
+            select: { id: true },
+          });
+
+      if (existingClient) {
+        clientId = existingClient.id;
+      } else {
+        const client = await tx.client.create({
+          data: {
+            prenom: payload.client.prenom,
+            telephone: payload.client.telephone ?? null,
+          },
+        });
+        clientId = client.id;
+      }
     }
 
     const numero = await generateFactureNumero(tx);
@@ -97,6 +113,7 @@ export async function POST(request: Request) {
       data: {
         numero,
         clientId,
+        tauxTva: defaultTvaRate,
         notes: "POS restaurant",
       },
     });
@@ -121,16 +138,12 @@ export async function POST(request: Request) {
       });
     }
 
-    const montantTotal = payload.items.reduce((acc: number, item) => {
-      const produit = produitMap.get(item.id);
-      if (!produit) return acc;
-      return acc + item.qty * Number(produit.prix);
-    }, 0);
+    const recalculated = await recalcFacture(facture.id, tx);
 
     await tx.paiement.create({
       data: {
         factureId: facture.id,
-        montant: montantTotal,
+        montant: recalculated.totalValue,
         modePaiement: payload.modePaiement,
         reference: payload.reference ?? null,
       },

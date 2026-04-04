@@ -1,18 +1,20 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import SidebarNav from "../components/SidebarNav";
+import SessionControls from "../components/SessionControls";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../lib/auth";
 import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
-  
+
   if (!session) {
     redirect("/login");
   }
 
   const user = session.user;
+  const isAdmin = user?.role === "ADMIN";
 
   return (
     <div className="min-h-screen">
@@ -26,7 +28,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               Moeris
             </span>
           </div>
-          <SidebarNav />
+          <SidebarNav role={user?.role} />
           <div className="mt-auto rounded-2xl border border-[color:var(--stroke)] bg-[color:var(--surface)] px-4 py-4 text-sm">
             <p className="text-[color:var(--ink-muted)]">
               Session active
@@ -49,13 +51,6 @@ export default async function DashboardLayout({ children }: { children: ReactNod
               </h1>
             </div>
             <div className="flex w-full flex-col gap-3 md:w-auto md:flex-row md:items-center">
-              <div className="flex w-full items-center gap-2 rounded-full border border-[color:var(--stroke)] bg-[color:var(--surface)] px-4 py-2 text-sm text-[color:var(--ink-muted)] md:w-72">
-                <span className="text-xs">⌕</span>
-                <input
-                  placeholder="Rechercher client, facture, chambre..."
-                  className="w-full bg-transparent text-[color:var(--ink)] placeholder:text-[color:var(--ink-muted)] focus:outline-none"
-                />
-              </div>
               <div className="flex gap-2">
                 <Link
                   href="/factures"
@@ -64,11 +59,12 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                   Voir les factures
                 </Link>
                 <Link
-                  href="/factures"
+                  href="/factures/nouvelle"
                   className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[color:var(--accent-strong)]"
                 >
                   Nouvelle facture
                 </Link>
+                <SessionControls />
               </div>
             </div>
           </header>
@@ -86,7 +82,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <Link href="/clients">Clients</Link>
         <Link href="/factures">Factures</Link>
         <Link href="/restaurant/pos">POS</Link>
-        <Link href="/settings">Admin</Link>
+        {isAdmin ? <Link href="/settings">Admin</Link> : null}
       </nav>
     </div>
   );

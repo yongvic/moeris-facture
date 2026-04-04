@@ -8,7 +8,13 @@ import {
   reservationCreateSchema,
   reservationUpdateSchema,
 } from "../../../lib/validators/reservation";
+import {
+  createReservationRecord,
+  ReservationServiceError,
+  updateReservationRecord,
+} from "../../../lib/services/reservations";
 import { zodErrorMessage } from "../../../lib/validation";
+import { createAuditLog } from "../../../lib/audit";
 
 type FormState = { error?: string };
 
@@ -40,7 +46,6 @@ export async function createReservation(
     prixNegocie: toNumber(formData.get("prixNegocie")),
     nombreAdultes: toNumber(formData.get("nombreAdultes")) ?? 1,
     nombreEnfants: toNumber(formData.get("nombreEnfants")) ?? 0,
-    statut: normalize(formData.get("statut")) ?? undefined,
     notes: normalize(formData.get("notes")),
   };
 
@@ -49,61 +54,27 @@ export async function createReservation(
     return { error: zodErrorMessage(parsed.error) };
   }
 
-  const dateArrivee = new Date(parsed.data.dateArrivee);
-  const dateDepart = new Date(parsed.data.dateDepart);
-
-  if (Number.isNaN(dateArrivee.getTime()) || Number.isNaN(dateDepart.getTime())) {
-    return { error: "Dates invalides." };
+  let reservation;
+  try {
+    reservation = await createReservationRecord(parsed.data);
+  } catch (error) {
+    if (error instanceof ReservationServiceError) {
+      return { error: error.message };
+    }
+    throw error;
   }
-
-  if (dateDepart <= dateArrivee) {
-    return { error: "La date de départ doit être après la date d'arrivée." };
-  }
-  const nombreNuits =
-    parsed.data.nombreNuits ??
-    Math.max(1, Math.ceil((dateDepart.getTime() - dateArrivee.getTime()) / 86400000));
-
-  const chambre = await prisma.chambre.findUnique({
-    where: { id: parsed.data.chambreId },
-    select: { capacite: true },
-  });
-  if (!chambre) return { error: "Chambre introuvable." };
-
-  const totalVoyageurs =
-    (parsed.data.nombreAdultes ?? 1) + (parsed.data.nombreEnfants ?? 0);
-  if (totalVoyageurs > chambre.capacite) {
-    return { error: "Capacité de la chambre dépassée." };
-  }
-
-  const overlap = await prisma.reservation.findFirst({
-    where: {
-      chambreId: parsed.data.chambreId,
-      statut: { notIn: ["ANNULEE", "CHECK_OUT_EFFECTUE"] },
-      dateArrivee: { lt: dateDepart },
-      dateDepart: { gt: dateArrivee },
-    },
-  });
-
-  if (overlap) {
-    return { error: "Conflit de réservation détecté." };
-  }
-
-  const reservation = await prisma.reservation.create({
-    data: {
-      clientId: parsed.data.clientId,
-      chambreId: parsed.data.chambreId,
-      dateArrivee,
-      dateDepart,
-      nombreNuits,
-      prixNegocie: parsed.data.prixNegocie ?? null,
-      nombreAdultes: parsed.data.nombreAdultes ?? 1,
-      nombreEnfants: parsed.data.nombreEnfants ?? 0,
-      statut: parsed.data.statut ?? "CONFIRMEE",
-      notes: parsed.data.notes ?? null,
-    },
-  });
 
   revalidatePath("/reservations");
+  await createAuditLog({
+    actorId: gate.session.user?.id ?? null,
+    action: "RESERVATION_CREATED",
+    entityType: "Reservation",
+    entityId: reservation.id,
+    details: {
+      clientId: reservation.clientId,
+      chambreId: reservation.chambreId,
+    },
+  });
   redirect(`/reservations/${reservation.id}`);
 }
 
@@ -126,7 +97,6 @@ export async function updateReservation(
     prixNegocie: toNumber(formData.get("prixNegocie")),
     nombreAdultes: toNumber(formData.get("nombreAdultes")) ?? 1,
     nombreEnfants: toNumber(formData.get("nombreEnfants")) ?? 0,
-    statut: normalize(formData.get("statut")) ?? undefined,
     notes: normalize(formData.get("notes")),
   };
 
@@ -135,63 +105,24 @@ export async function updateReservation(
     return { error: zodErrorMessage(parsed.error) };
   }
 
-  const current = await prisma.reservation.findUnique({
-    where: { id },
-    include: { chambre: true },
-  });
-  if (!current) return { error: "Réservation introuvable." };
-
-  if (parsed.data.dateArrivee || parsed.data.dateDepart) {
-    const arrivee = parsed.data.dateArrivee
-      ? new Date(parsed.data.dateArrivee)
-      : current.dateArrivee;
-    const depart = parsed.data.dateDepart
-      ? new Date(parsed.data.dateDepart)
-      : current.dateDepart;
-
-    if (Number.isNaN(arrivee.getTime()) || Number.isNaN(depart.getTime())) {
-      return { error: "Dates invalides." };
+  try {
+    await updateReservationRecord(id, parsed.data);
+  } catch (error) {
+    if (error instanceof ReservationServiceError) {
+      return { error: error.message };
     }
-
-    if (depart <= arrivee) {
-      return { error: "La date de départ doit être après la date d'arrivée." };
-    }
+    throw error;
   }
-
-  const chambreId = parsed.data.chambreId ?? current.chambreId;
-  const chambre =
-    chambreId === current.chambreId
-      ? current.chambre
-      : await prisma.chambre.findUnique({
-          where: { id: chambreId },
-          select: { capacite: true },
-        });
-
-  if (!chambre) return { error: "Chambre introuvable." };
-
-  const totalVoyageurs =
-    (parsed.data.nombreAdultes ?? current.nombreAdultes) +
-    (parsed.data.nombreEnfants ?? current.nombreEnfants);
-
-  if (totalVoyageurs > chambre.capacite) {
-    return { error: "Capacité de la chambre dépassée." };
-  }
-
-  await prisma.reservation.update({
-    where: { id },
-    data: {
-      ...parsed.data,
-      dateArrivee: parsed.data.dateArrivee
-        ? new Date(parsed.data.dateArrivee)
-        : undefined,
-      dateDepart: parsed.data.dateDepart
-        ? new Date(parsed.data.dateDepart)
-        : undefined,
-    },
-  });
 
   revalidatePath(`/reservations/${id}`);
   revalidatePath("/reservations");
+  await createAuditLog({
+    actorId: gate.session.user?.id ?? null,
+    action: "RESERVATION_UPDATED",
+    entityType: "Reservation",
+    entityId: id,
+    details: payload,
+  });
   return {};
 }
 
@@ -205,12 +136,155 @@ export async function cancelReservation(
   const id = formData.get("id")?.toString();
   if (!id) return { error: "Réservation introuvable." };
 
-  await prisma.reservation.update({
+  const reservation = await prisma.reservation.findUnique({
     where: { id },
-    data: { statut: "ANNULEE" },
+    select: { id: true, statut: true, chambreId: true },
+  });
+  if (!reservation) return { error: "Réservation introuvable." };
+  if (reservation.statut === "CHECK_OUT_EFFECTUE") {
+    return { error: "Impossible d'annuler un séjour déjà clôturé." };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.reservation.update({
+      where: { id },
+      data: {
+        statut: "ANNULEE",
+        checkOutAt:
+          reservation.statut === "CHECK_IN_EFFECTUE" ? new Date() : undefined,
+      },
+    });
+    if (reservation.statut === "CHECK_IN_EFFECTUE") {
+      await tx.chambre.update({
+        where: { id: reservation.chambreId },
+        data: { statut: "DISPONIBLE" },
+      });
+    }
+    await createAuditLog(
+      {
+        actorId: gate.session.user?.id ?? null,
+        action: "RESERVATION_CANCELLED",
+        entityType: "Reservation",
+        entityId: id,
+      },
+      tx
+    );
   });
 
   revalidatePath(`/reservations/${id}`);
   revalidatePath("/reservations");
+  revalidatePath("/chambres");
+  return {};
+}
+
+export async function checkInReservation(
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const gate = await requireRole("STAFF");
+  if ("error" in gate) return { error: "Non autorisé." };
+
+  const id = formData.get("id")?.toString();
+  if (!id) return { error: "Réservation introuvable." };
+
+  const reservation = await prisma.reservation.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      statut: true,
+      chambreId: true,
+      chambre: { select: { statut: true } },
+    },
+  });
+
+  if (!reservation) return { error: "Réservation introuvable." };
+  if (reservation.statut === "CHECK_OUT_EFFECTUE") {
+    return { error: "Le séjour est déjà clôturé." };
+  }
+  if (reservation.statut === "CHECK_IN_EFFECTUE") {
+    return { error: "Le check-in a déjà été effectué." };
+  }
+  if (reservation.statut === "ANNULEE" || reservation.statut === "NO_SHOW") {
+    return { error: "Cette réservation ne peut pas passer en check-in." };
+  }
+  if (reservation.chambre.statut !== "DISPONIBLE") {
+    return { error: "La chambre n'est pas disponible pour un check-in." };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.reservation.update({
+      where: { id },
+      data: {
+        statut: "CHECK_IN_EFFECTUE",
+        checkInAt: new Date(),
+      },
+    });
+    await tx.chambre.update({
+      where: { id: reservation.chambreId },
+      data: { statut: "OCCUPEE" },
+    });
+    await createAuditLog(
+      {
+        actorId: gate.session.user?.id ?? null,
+        action: "RESERVATION_CHECK_IN",
+        entityType: "Reservation",
+        entityId: id,
+      },
+      tx
+    );
+  });
+
+  revalidatePath(`/reservations/${id}`);
+  revalidatePath("/reservations");
+  revalidatePath("/chambres");
+  return {};
+}
+
+export async function checkOutReservation(
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const gate = await requireRole("STAFF");
+  if ("error" in gate) return { error: "Non autorisé." };
+
+  const id = formData.get("id")?.toString();
+  if (!id) return { error: "Réservation introuvable." };
+
+  const reservation = await prisma.reservation.findUnique({
+    where: { id },
+    select: { id: true, statut: true, chambreId: true },
+  });
+
+  if (!reservation) return { error: "Réservation introuvable." };
+  if (reservation.statut !== "CHECK_IN_EFFECTUE") {
+    return { error: "Le check-out nécessite un check-in préalable." };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.reservation.update({
+      where: { id },
+      data: {
+        statut: "CHECK_OUT_EFFECTUE",
+        checkOutAt: new Date(),
+      },
+    });
+    await tx.chambre.update({
+      where: { id: reservation.chambreId },
+      data: { statut: "DISPONIBLE" },
+    });
+    await createAuditLog(
+      {
+        actorId: gate.session.user?.id ?? null,
+        action: "RESERVATION_CHECK_OUT",
+        entityType: "Reservation",
+        entityId: id,
+      },
+      tx
+    );
+  });
+
+  revalidatePath(`/reservations/${id}`);
+  revalidatePath("/reservations");
+  revalidatePath("/chambres");
   return {};
 }
